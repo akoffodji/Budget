@@ -764,6 +764,47 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
   display: flex; align-items: center; gap: 6px;
 }
 
+
+/* ── SETTINGS MONTH PICKER ── */
+.scope-month-picker {
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid var(--sep2);
+}
+.scope-picker-label {
+  font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--label3); margin-bottom: 10px;
+}
+.scope-month-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  margin-bottom: 10px;
+}
+.scope-month-btn {
+  padding: 8px 4px; border: 1.5px solid var(--sep2);
+  border-radius: var(--radius); background: var(--bg2);
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  color: var(--label2); cursor: pointer; text-align: center;
+  transition: all .15s; position: relative;
+}
+.scope-month-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+.scope-month-btn.selected { background: var(--blue); border-color: var(--blue); color: #fff; }
+.scope-month-btn.has-override { border-color: var(--orange); }
+.scope-month-btn.has-override::after {
+  content: ''; position: absolute; top: 3px; right: 3px;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--orange);
+}
+.scope-month-btn.has-override.selected::after { background: rgba(255,255,255,.8); }
+.scope-year-nav {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.scope-year-btn {
+  width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--sep2);
+  background: var(--bg2); cursor: pointer; display: flex;
+  align-items: center; justify-content: center; color: var(--label2);
+  transition: all .15s;
+}
+.scope-year-btn:hover { border-color: var(--blue); color: var(--blue); }
+.scope-year-label { font-size: 15px; font-weight: 700; min-width: 50px; text-align: center; }
+
 @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 .summary-card,.budget-bar-card,.cat-card,.tx-card,.hist-table { animation:fadeUp .3s ease both; }
 
@@ -1085,16 +1126,30 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 
           <!-- Month scope toggle -->
           <div class="settings-month-scope" id="settingsMonthScope">
+            <!-- Header row -->
             <div class="scope-toggle-wrap" onclick="toggleMonthScope()">
               <div class="scope-info">
-                <div class="scope-title" id="scopeTitle">Appliquer à ce mois seulement</div>
+                <div class="scope-title" id="scopeTitle">Appliquer à un mois spécifique</div>
                 <div class="scope-sub" id="scopeSub">Par défaut pour tous les mois</div>
               </div>
               <div class="scope-switch-track" id="scopeSwitchTrack">
                 <div class="scope-switch-thumb"></div>
               </div>
             </div>
-            <div class="scope-badge" id="scopeBadge" style="display:none"></div>
+            <!-- Month picker (shown when toggle is ON) -->
+            <div class="scope-month-picker" id="scopeMonthPicker" style="display:none">
+              <div class="scope-picker-label" id="scopePickerLabel">Choisir le mois :</div>
+              <div class="scope-month-grid" id="scopeMonthGrid"></div>
+              <div class="scope-year-nav">
+                <button class="scope-year-btn" onclick="changeSettingsYear(-1)">
+                  <span class="mi mi-sm">chevron_left</span>
+                </button>
+                <span class="scope-year-label" id="scopeYearLabel">2026</span>
+                <button class="scope-year-btn" onclick="changeSettingsYear(1)">
+                  <span class="mi mi-sm">chevron_right</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <button class="settings-save-btn" onclick="saveSettings()">
@@ -1105,7 +1160,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       </div>
 
     <footer class="app-footer">
-        <div class="footer-version" id="footerVersion">v1.260301.5</div>
+        <div class="footer-version" id="footerVersion">v1.260301.7</div>
         <div class="footer-copy" id="footerCopy">© 2026 Budget 2026</div>
     </footer>
     </div>
@@ -1841,7 +1896,7 @@ async function saveSettings() {
 
   try {
     const applyToMonth = _monthScopeOn;
-    const mk = applyToMonth ? currentMonthKey() : null;
+    const mk = (applyToMonth && _selectedMonth) ? _selectedMonth : null;
 
     // Always save base (structure: cat names, groups, custom cats)
     const basePayload = buildSettingsPayload(null);
@@ -1873,52 +1928,68 @@ async function saveSettings() {
   }
 }
 
-let _monthScopeOn = false;
+let _monthScopeOn  = false;
+let _settingsYear  = new Date().getFullYear();
+let _selectedMonth = null;
 
 function toggleMonthScope() {
   _monthScopeOn = !_monthScopeOn;
-  const track = document.getElementById('scopeSwitchTrack');
-  if(track) track.classList.toggle('on', _monthScopeOn);
+  const track  = document.getElementById('scopeSwitchTrack');
+  const picker = document.getElementById('scopeMonthPicker');
+  if(track)  track.classList.toggle('on', _monthScopeOn);
+  if(picker) picker.style.display = _monthScopeOn ? 'block' : 'none';
+  if(_monthScopeOn) {
+    _selectedMonth = currentMonthKey();
+    _settingsYear  = viewYear;
+    renderMonthPicker();
+  } else {
+    _selectedMonth = null;
+  }
   updateScopeLabel();
 }
 
+function changeSettingsYear(d) {
+  _settingsYear += d;
+  renderMonthPicker();
+}
+
+function selectSettingsMonth(mk) {
+  _selectedMonth = mk;
+  renderMonthPicker();
+  updateScopeLabel();
+}
+
+function renderMonthPicker() {
+  const grid      = document.getElementById('scopeMonthGrid');
+  const yearLabel = document.getElementById('scopeYearLabel');
+  if(!grid) return;
+  if(yearLabel) yearLabel.textContent = _settingsYear;
+  const monthShort = LANG==='fr'
+    ? ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']
+    : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  grid.innerHTML = monthShort.map((m, i) => {
+    const mk = `${_settingsYear}-${String(i+1).padStart(2,'0')}`;
+    const isSelected = mk === _selectedMonth;
+    return `<button class="scope-month-btn${isSelected ? ' selected' : ''}" onclick="selectSettingsMonth('${mk}')">${m}</button>`;
+  }).join('');
+}
+
 function updateScopeLabel() {
-  const checked = _monthScopeOn;
-  const badge   = document.getElementById('scopeBadge');
+  const scopeTitle = document.getElementById('scopeTitle');
+  const scopeSub   = document.getElementById('scopeSub');
   const monthNames = LANG==='fr'
     ? ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
     : ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const monthLabel = `${monthNames[viewMonth]} ${viewYear}`;
-
-  const scopeTitle = document.getElementById('scopeTitle');
-  const scopeSub   = document.getElementById('scopeSub');
-  if(scopeTitle) scopeTitle.textContent = LANG==='fr'
-    ? `Appliquer à ${monthLabel} seulement`
-    : `Apply to ${monthLabel} only`;
-  if(scopeSub) scopeSub.textContent = LANG==='fr'
-    ? 'Désactivé = n’s’applique pas à ce mois'
-    : 'Off = applies to all months';
-
-  if(badge) {
-    if(checked) {
-      badge.style.display = 'flex';
-      badge.innerHTML = `<span class="mi mi-sm">event</span> ${LANG==='fr'?'Ce mois':'This month'}: ${monthLabel}`;
-    } else {
-      badge.style.display = 'none';
-    }
+  if(_monthScopeOn && _selectedMonth) {
+    const [y, m] = _selectedMonth.split('-');
+    const label = `${monthNames[parseInt(m)-1]} ${y}`;
+    if(scopeTitle) scopeTitle.textContent = LANG==='fr' ? `Mois sélectionné : ${label}` : `Selected: ${label}`;
+    if(scopeSub)   scopeSub.textContent   = LANG==='fr' ? 'Objectifs sauvegardés pour ce mois' : 'Goals saved for this month';
+  } else {
+    if(scopeTitle) scopeTitle.textContent = LANG==='fr' ? 'Appliquer à un mois spécifique' : 'Apply to a specific month';
+    if(scopeSub)   scopeSub.textContent   = LANG==='fr' ? 'Par défaut pour tous les mois' : 'Default for all months';
   }
-
-  // Show override badge if current month has overrides
-  if(userSettings.has_month_override) {
-    const ovBadge = document.getElementById('scopeOverrideBadge');
-    if(ovBadge) {
-      ovBadge.style.display = 'flex';
-      ovBadge.textContent   = LANG==='fr'
-        ? `⚡ Objectifs personnalisés pour ${monthLabel}`
-        : `⚡ Custom goals for ${monthLabel}`;
-    }
   }
-}
 
 function renderSettingsView() {
   document.getElementById('s-income').value  = userSettings.income_target;
@@ -1929,9 +2000,13 @@ function renderSettingsView() {
   updateScopeLabel();
 
   // Pre-check month toggle if current month already has an override
-  _monthScopeOn = !!userSettings.has_month_override;
-  const track = document.getElementById('scopeSwitchTrack');
-  if(track) track.classList.toggle('on', _monthScopeOn);
+  _monthScopeOn  = false; // always start with toggle OFF when opening settings
+  _selectedMonth = null;
+  _settingsYear  = viewYear;
+  const track  = document.getElementById('scopeSwitchTrack');
+  const picker = document.getElementById('scopeMonthPicker');
+  if(track)  track.classList.remove('on');
+  if(picker) picker.style.display = 'none';
 
   const container = document.getElementById('settingsCatSections');
   container.innerHTML = '';
@@ -2255,7 +2330,7 @@ function applyI18n() {
   const fv = document.getElementById('footerVersion');
   const fc = document.getElementById('footerCopy');
   const d  = LANG==='fr' ? '01 Mar 2026' : 'Mar 01, 2026';
-  if(fv) fv.textContent = 'v1.260301.5 · ' + t.updatedOn + ' ' + d;
+  if(fv) fv.textContent = 'v1.260301.7 · ' + t.updatedOn + ' ' + d;
   if(fc) fc.textContent = '© 2026 Budget 2026 · ' + t.allRights;
   // Set topbar title to current view
   const ttEl = document.getElementById('topbarTitle');
