@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -733,6 +733,37 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 }
 .edit-del-btn-lg:hover { background: var(--red); color: #fff; }
 
+
+/* ── SETTINGS MONTH SCOPE ── */
+.settings-month-scope {
+  background: var(--fill3); border-radius: var(--radius-xl);
+  padding: 14px 16px; margin-bottom: 4px;
+}
+.scope-toggle-wrap {
+  display: flex; align-items: center; gap: 12px; cursor: pointer;
+}
+.scope-info { flex: 1; }
+.scope-title { font-size: 14px; font-weight: 600; color: var(--label); }
+.scope-sub { font-size: 12px; color: var(--label3); margin-top: 2px; }
+.scope-checkbox { display: none; }
+.scope-switch {
+  width: 44px; height: 26px; border-radius: 100px;
+  background: var(--sep); cursor: pointer; position: relative;
+  transition: background .25s; flex-shrink: 0;
+}
+.scope-switch::after {
+  content: ''; position: absolute; width: 20px; height: 20px;
+  border-radius: 50%; background: #fff; top: 3px; left: 3px;
+  transition: transform .25s; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+}
+.scope-checkbox:checked ~ .scope-switch { background: var(--blue); }
+.scope-checkbox:checked ~ .scope-switch::after { transform: translateX(18px); }
+.scope-badge {
+  margin-top: 10px; padding: 6px 10px; background: var(--blue-light);
+  border-radius: var(--radius); font-size: 12px; font-weight: 600; color: var(--blue);
+  display: flex; align-items: center; gap: 6px;
+}
+
 @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 .summary-card,.budget-bar-card,.cat-card,.tx-card,.hist-table { animation:fadeUp .3s ease both; }
 
@@ -863,20 +894,22 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
           <div class="summary-card income">
             <div class="summary-icon-row">
               <div class="summary-icon"><span class="mi mi-lg">trending_up</span></div>
-              <button class="quick-add-btn" onclick="quickAdd('income')" title="Ajouter un revenu"><span class="mi mi-sm">add</span></button>
+              <button class="quick-add-btn" onclick="quickAdd('income')" id="add-income-btn" title="Ajouter un revenu"><span class="mi mi-sm">add</span></button>
             </div>
             <div class="summary-label" data-i18n="incomeCard"></div>
             <div class="summary-value" id="ov-income">0 $</div>
             <div class="summary-sub"><span data-i18n="target"></span> <strong id="ov-income-target">6 700 $</strong></div>
+            <div class="summary-sub" id="ov-income-sub" style="margin-top:2px;font-size:11px"></div>
           </div>
           <div class="summary-card expense">
             <div class="summary-icon-row">
               <div class="summary-icon"><span class="mi mi-lg">trending_down</span></div>
-              <button class="quick-add-btn" onclick="quickAdd('expense')" title="Ajouter une dépense"><span class="mi mi-sm">add</span></button>
+              <button class="quick-add-btn" onclick="quickAdd('expense')" id="add-expense-btn" title="Ajouter une dépense"><span class="mi mi-sm">add</span></button>
             </div>
             <div class="summary-label" data-i18n="expenseCard"></div>
             <div class="summary-value" id="ov-expense">0 $</div>
             <div class="summary-sub"><span data-i18n="target"></span> <strong id="ov-expense-target">4 428 $</strong></div>
+            <div class="summary-sub" id="ov-expense-sub" style="margin-top:2px;font-size:11px"></div>
           </div>
           <div class="summary-card savings">
             <div class="summary-icon-row">
@@ -891,11 +924,11 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
         <div class="budget-bar-card">
           <div class="bbc-header">
             <div class="bbc-title" data-i18n="budgetBarTitle"></div>
-            <div class="bbc-meta" id="ov-bar-meta">0 / 4 428 $</div>
+            <div class="bbc-meta" id="ov-bar-meta"></div>
           </div>
           <div class="bar-outer"><div class="bar-inner bar-safe" id="ov-bar" style="width:0%"></div></div>
           <div class="bar-labels">
-            <span>0 $</span>
+            <span id="ov-bar-min">0 $</span>
             <span id="ov-bar-pct" style="font-weight:600;color:var(--green)">0%</span>
             <span id="ov-bar-max">4 428 $</span>
           </div>
@@ -906,7 +939,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
             <div class="section-header" onclick="toggleSection('cats')">
               <div style="display:flex;align-items:center;gap:8px">
                 <div class="section-title" data-i18n="categories"></div>
-                <div class="section-sub" id="ov-cat-sub" data-i18n="thisMonth"></div>
+                <div class="section-sub" id="ov-cat-sub"></div>
               </div>
               <span class="mi section-chevron">expand_more</span>
             </div>
@@ -1049,6 +1082,19 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 
           <!-- Catégories de dépenses -->
           <div id="settingsCatSections"></div>
+
+          <!-- Month scope toggle -->
+          <div class="settings-month-scope" id="settingsMonthScope">
+            <label class="scope-toggle-wrap">
+              <div class="scope-info">
+                <div class="scope-title" id="scopeTitle">Appliquer à ce mois seulement</div>
+                <div class="scope-sub" id="scopeSub">Sinon s'applique à tous les mois</div>
+              </div>
+              <input type="checkbox" id="settings-apply-month" class="scope-checkbox">
+              <div class="scope-switch" onclick="document.getElementById('settings-apply-month').click();updateScopeLabel()"></div>
+            </label>
+            <div class="scope-badge" id="scopeBadge" style="display:none"></div>
+          </div>
 
           <button class="settings-save-btn" onclick="saveSettings()">
             <span class="mi mi-sm">save</span> <span data-i18n="saveSettings"></span>
@@ -1210,11 +1256,15 @@ const I18N = {
     loading:"Chargement des données…",
     updatedOn:"Mis à jour le", allRights:"Tous droits réservés",
     today:"Aujourd'hui", disconnect:"Se déconnecter",
+    noTx:"Aucune transaction", addFirst:"Ajoutez votre première entrée",
+    addIncome:"Ajouter un revenu", addExpense:"Ajouter une dépense",
+    incomeProgress:"du revenu cible", expenseProgress:"du budget utilisé",
     installTitle:"Installer Budget 2026",
     incomeLabel:"Revenu", expenseLabel:"Dépense",
     perMonth:"$/mois", perMonthShort:"$/m",
     language:"Langue", darkMode:"Mode sombre", lightMode:"Mode clair",
     autoCalc:"● Calculé automatiquement",
+    applyMonth:"Appliquer à ce mois seulement", applyAll:"S'applique à tous les mois",
   },
   en: {
     overview:"Overview", add:"Add", history:"History", settings:"Goals",
@@ -1249,11 +1299,15 @@ const I18N = {
     loading:"Loading data…",
     updatedOn:"Updated", allRights:"All rights reserved",
     today:"Today", disconnect:"Sign out",
+    noTx:"No transactions", addFirst:"Add your first entry",
+    addIncome:"Add income", addExpense:"Add expense",
+    incomeProgress:"of target income", expenseProgress:"of budget used",
     installTitle:"Install Budget 2026",
     incomeLabel:"Income", expenseLabel:"Expense",
     perMonth:"$/mo", perMonthShort:"$/mo",
     language:"Language", darkMode:"Dark mode", lightMode:"Light mode",
     autoCalc:"● Auto-calculated",
+    applyMonth:"Apply to this month only", applyAll:"Applies to all months",
   }
 };
 let LANG = (()=>{ try{ return localStorage.getItem('budget26_lang')||'auto'; }catch(e){return 'auto';} })();
@@ -1359,7 +1413,95 @@ const REGIONAL_DEFAULTS = {
     cats:{ hypotheques:1500, frais_condo:250, taxes:200, bell:100, hydro:80,
            pret_auto:400, essence:120, entretien_auto:60,
            bouffe:500, assurances:120, ass_vie:100, maintenance:80, autres_dep:80 }
-  }
+  },
+
+  // ── REST OF EUROPE ──────────────────────────────────────────────────────────
+  ES: { income:2800, cats:{ hypotheques:750, frais_condo:100, taxes:100, bell:40, hydro:70, pret_auto:250, essence:130, entretien_auto:50, bouffe:350, assurances:90, ass_vie:70, maintenance:50, autres_dep:70 } },
+  IT: { income:2700, cats:{ hypotheques:700, frais_condo:100, taxes:100, bell:30, hydro:80, pret_auto:250, essence:140, entretien_auto:50, bouffe:350, assurances:90, ass_vie:70, maintenance:50, autres_dep:70 } },
+  NL: { income:4200, cats:{ hypotheques:1100, frais_condo:150, taxes:150, bell:45, hydro:90, pret_auto:350, essence:170, entretien_auto:70, bouffe:450, assurances:130, ass_vie:100, maintenance:70, autres_dep:100 } },
+  PT: { income:1800, cats:{ hypotheques:600, frais_condo:80, taxes:80, bell:25, hydro:60, pret_auto:200, essence:120, entretien_auto:40, bouffe:280, assurances:70, ass_vie:50, maintenance:40, autres_dep:50 } },
+  SE: { income:5000, cats:{ hypotheques:1300, frais_condo:200, taxes:200, bell:40, hydro:80, pret_auto:400, essence:160, entretien_auto:80, bouffe:500, assurances:150, ass_vie:120, maintenance:80, autres_dep:100 } },
+  NO: { income:6500, cats:{ hypotheques:1800, frais_condo:250, taxes:300, bell:60, hydro:100, pret_auto:500, essence:200, entretien_auto:100, bouffe:600, assurances:180, ass_vie:140, maintenance:100, autres_dep:120 } },
+  DK: { income:5500, cats:{ hypotheques:1500, frais_condo:220, taxes:250, bell:50, hydro:90, pret_auto:450, essence:180, entretien_auto:90, bouffe:550, assurances:160, ass_vie:130, maintenance:90, autres_dep:110 } },
+  FI: { income:4500, cats:{ hypotheques:1100, frais_condo:180, taxes:200, bell:40, hydro:90, pret_auto:380, essence:160, entretien_auto:80, bouffe:480, assurances:140, ass_vie:110, maintenance:80, autres_dep:100 } },
+  AT: { income:3800, cats:{ hypotheques:950, frais_condo:140, taxes:130, bell:40, hydro:85, pret_auto:320, essence:150, entretien_auto:65, bouffe:420, assurances:120, ass_vie:90, maintenance:65, autres_dep:85 } },
+  PL: { income:1800, cats:{ hypotheques:500, frais_condo:80, taxes:60, bell:20, hydro:50, pret_auto:180, essence:100, entretien_auto:40, bouffe:250, assurances:60, ass_vie:50, maintenance:40, autres_dep:50 } },
+  CZ: { income:1700, cats:{ hypotheques:480, frais_condo:75, taxes:55, bell:18, hydro:48, pret_auto:170, essence:95, entretien_auto:38, bouffe:230, assurances:55, ass_vie:45, maintenance:38, autres_dep:48 } },
+  HU: { income:1400, cats:{ hypotheques:380, frais_condo:60, taxes:45, bell:15, hydro:45, pret_auto:150, essence:90, entretien_auto:35, bouffe:200, assurances:50, ass_vie:40, maintenance:35, autres_dep:40 } },
+  RO: { income:1200, cats:{ hypotheques:320, frais_condo:50, taxes:40, bell:12, hydro:40, pret_auto:130, essence:80, entretien_auto:30, bouffe:180, assurances:45, ass_vie:35, maintenance:30, autres_dep:35 } },
+  GR: { income:1500, cats:{ hypotheques:420, frais_condo:70, taxes:60, bell:25, hydro:60, pret_auto:170, essence:110, entretien_auto:40, bouffe:250, assurances:65, ass_vie:50, maintenance:40, autres_dep:55 } },
+  IE: { income:5000, cats:{ hypotheques:1600, frais_condo:220, taxes:200, bell:60, hydro:110, pret_auto:420, essence:180, entretien_auto:90, bouffe:520, assurances:160, ass_vie:130, maintenance:90, autres_dep:120 } },
+  LU: { income:6000, cats:{ hypotheques:1800, frais_condo:280, taxes:300, bell:60, hydro:100, pret_auto:500, essence:180, entretien_auto:100, bouffe:580, assurances:180, ass_vie:150, maintenance:100, autres_dep:130 } },
+
+  // ── AMÉRIQUE LATINE ─────────────────────────────────────────────────────────
+  MX: { income:1200, cats:{ hypotheques:350, frais_condo:60, taxes:40, bell:20, hydro:25, pret_auto:150, essence:80, entretien_auto:30, bouffe:200, assurances:50, ass_vie:40, maintenance:30, autres_dep:40 } },
+  BR: { income:1500, cats:{ hypotheques:420, frais_condo:70, taxes:50, bell:25, hydro:35, pret_auto:180, essence:90, entretien_auto:35, bouffe:220, assurances:55, ass_vie:45, maintenance:35, autres_dep:45 } },
+  AR: { income:800,  cats:{ hypotheques:220, frais_condo:40, taxes:30, bell:15, hydro:20, pret_auto:100, essence:50, entretien_auto:20, bouffe:130, assurances:35, ass_vie:25, maintenance:20, autres_dep:25 } },
+  CO: { income:700,  cats:{ hypotheques:200, frais_condo:35, taxes:25, bell:12, hydro:18, pret_auto:90, essence:45, entretien_auto:18, bouffe:120, assurances:30, ass_vie:22, maintenance:18, autres_dep:22 } },
+  CL: { income:1100, cats:{ hypotheques:320, frais_condo:55, taxes:40, bell:18, hydro:28, pret_auto:140, essence:70, entretien_auto:28, bouffe:190, assurances:48, ass_vie:38, maintenance:28, autres_dep:38 } },
+  PE: { income:700,  cats:{ hypotheques:190, frais_condo:32, taxes:22, bell:10, hydro:16, pret_auto:85, essence:42, entretien_auto:16, bouffe:115, assurances:28, ass_vie:20, maintenance:16, autres_dep:20 } },
+  EC: { income:600,  cats:{ hypotheques:160, frais_condo:28, taxes:20, bell:9, hydro:14, pret_auto:75, essence:38, entretien_auto:14, bouffe:100, assurances:24, ass_vie:18, maintenance:14, autres_dep:18 } },
+  VE: { income:400,  cats:{ hypotheques:100, frais_condo:18, taxes:12, bell:6, hydro:8, pret_auto:45, essence:20, entretien_auto:8, bouffe:65, assurances:15, ass_vie:10, maintenance:8, autres_dep:10 } },
+  UY: { income:1300, cats:{ hypotheques:360, frais_condo:60, taxes:45, bell:20, hydro:30, pret_auto:160, essence:75, entretien_auto:30, bouffe:210, assurances:52, ass_vie:42, maintenance:30, autres_dep:42 } },
+  CR: { income:1000, cats:{ hypotheques:280, frais_condo:48, taxes:32, bell:15, hydro:22, pret_auto:120, essence:60, entretien_auto:22, bouffe:160, assurances:40, ass_vie:30, maintenance:22, autres_dep:30 } },
+  PA: { income:1100, cats:{ hypotheques:310, frais_condo:52, taxes:36, bell:16, hydro:24, pret_auto:130, essence:64, entretien_auto:24, bouffe:170, assurances:44, ass_vie:34, maintenance:24, autres_dep:34 } },
+  DO: { income:800,  cats:{ hypotheques:220, frais_condo:38, taxes:26, bell:12, hydro:20, pret_auto:100, essence:50, entretien_auto:18, bouffe:130, assurances:32, ass_vie:24, maintenance:18, autres_dep:24 } },
+
+  // ── AFRIQUE ─────────────────────────────────────────────────────────────────
+  MA: { income:600,  cats:{ hypotheques:160, frais_condo:28, taxes:18, bell:10, hydro:15, pret_auto:70, essence:40, entretien_auto:14, bouffe:100, assurances:24, ass_vie:18, maintenance:14, autres_dep:18 } },
+  TN: { income:450,  cats:{ hypotheques:120, frais_condo:20, taxes:14, bell:8, hydro:12, pret_auto:55, essence:30, entretien_auto:10, bouffe:75, assurances:18, ass_vie:14, maintenance:10, autres_dep:14 } },
+  DZ: { income:500,  cats:{ hypotheques:130, frais_condo:22, taxes:15, bell:8, hydro:12, pret_auto:58, essence:28, entretien_auto:10, bouffe:80, assurances:20, ass_vie:15, maintenance:10, autres_dep:15 } },
+  EG: { income:400,  cats:{ hypotheques:100, frais_condo:18, taxes:12, bell:7, hydro:10, pret_auto:48, essence:24, entretien_auto:9, bouffe:65, assurances:16, ass_vie:12, maintenance:9, autres_dep:12 } },
+  SN: { income:350,  cats:{ hypotheques:90, frais_condo:16, taxes:10, bell:6, hydro:9, pret_auto:40, essence:22, entretien_auto:8, bouffe:58, assurances:14, ass_vie:10, maintenance:8, autres_dep:10 } },
+  CI: { income:380,  cats:{ hypotheques:95, frais_condo:17, taxes:11, bell:7, hydro:9, pret_auto:42, essence:23, entretien_auto:8, bouffe:60, assurances:15, ass_vie:11, maintenance:8, autres_dep:11 } },
+  CM: { income:360,  cats:{ hypotheques:92, frais_condo:16, taxes:10, bell:6, hydro:8, pret_auto:40, essence:22, entretien_auto:8, bouffe:58, assurances:14, ass_vie:10, maintenance:8, autres_dep:10 } },
+  GH: { income:500,  cats:{ hypotheques:130, frais_condo:22, taxes:15, bell:8, hydro:12, pret_auto:58, essence:30, entretien_auto:10, bouffe:80, assurances:20, ass_vie:15, maintenance:10, autres_dep:15 } },
+  NG: { income:450,  cats:{ hypotheques:115, frais_condo:20, taxes:13, bell:7, hydro:11, pret_auto:52, essence:26, entretien_auto:9, bouffe:72, assurances:18, ass_vie:13, maintenance:9, autres_dep:13 } },
+  KE: { income:550,  cats:{ hypotheques:145, frais_condo:24, taxes:16, bell:9, hydro:13, pret_auto:62, essence:32, entretien_auto:11, bouffe:88, assurances:22, ass_vie:16, maintenance:11, autres_dep:16 } },
+  ZA: { income:1200, cats:{ hypotheques:320, frais_condo:55, taxes:38, bell:18, hydro:28, pret_auto:140, essence:70, entretien_auto:28, bouffe:190, assurances:48, ass_vie:38, maintenance:28, autres_dep:38 } },
+  ET: { income:200,  cats:{ hypotheques:52, frais_condo:9, taxes:6, bell:3, hydro:4, pret_auto:22, essence:12, entretien_auto:4, bouffe:32, assurances:8, ass_vie:6, maintenance:4, autres_dep:6 } },
+  TZ: { income:280,  cats:{ hypotheques:72, frais_condo:12, taxes:8, bell:4, hydro:6, pret_auto:32, essence:16, entretien_auto:6, bouffe:44, assurances:11, ass_vie:8, maintenance:6, autres_dep:8 } },
+  MG: { income:200,  cats:{ hypotheques:50, frais_condo:9, taxes:6, bell:3, hydro:4, pret_auto:22, essence:11, entretien_auto:4, bouffe:32, assurances:8, ass_vie:6, maintenance:4, autres_dep:6 } },
+  BJ: { income:280,  cats:{ hypotheques:72, frais_condo:12, taxes:8, bell:5, hydro:7, pret_auto:30, essence:16, entretien_auto:6, bouffe:45, assurances:11, ass_vie:8, maintenance:6, autres_dep:8 } },
+  MU: { income:900,  cats:{ hypotheques:240, frais_condo:40, taxes:28, bell:14, hydro:20, pret_auto:105, essence:52, entretien_auto:20, bouffe:142, assurances:36, ass_vie:28, maintenance:20, autres_dep:28 } },
+
+  // ── ASIE ────────────────────────────────────────────────────────────────────
+  JP: { income:4000, cats:{ hypotheques:1000, frais_condo:180, taxes:150, bell:50, hydro:80, pret_auto:350, essence:140, entretien_auto:70, bouffe:420, assurances:120, ass_vie:100, maintenance:70, autres_dep:90 } },
+  KR: { income:3500, cats:{ hypotheques:900, frais_condo:160, taxes:130, bell:45, hydro:70, pret_auto:300, essence:130, entretien_auto:60, bouffe:380, assurances:110, ass_vie:90, maintenance:60, autres_dep:80 } },
+  CN: { income:2000, cats:{ hypotheques:550, frais_condo:100, taxes:70, bell:20, hydro:30, pret_auto:180, essence:80, entretien_auto:35, bouffe:230, assurances:65, ass_vie:50, maintenance:35, autres_dep:50 } },
+  SG: { income:6000, cats:{ hypotheques:1800, frais_condo:300, taxes:200, bell:60, hydro:80, pret_auto:500, essence:200, entretien_auto:100, bouffe:580, assurances:180, ass_vie:150, maintenance:100, autres_dep:130 } },
+  HK: { income:5500, cats:{ hypotheques:2000, frais_condo:350, taxes:100, bell:55, hydro:70, pret_auto:400, essence:180, entretien_auto:90, bouffe:520, assurances:160, ass_vie:130, maintenance:90, autres_dep:120 } },
+  IN: { income:800,  cats:{ hypotheques:200, frais_condo:36, taxes:24, bell:8, hydro:12, pret_auto:90, essence:45, entretien_auto:16, bouffe:130, assurances:32, ass_vie:24, maintenance:16, autres_dep:24 } },
+  PK: { income:400,  cats:{ hypotheques:100, frais_condo:18, taxes:12, bell:5, hydro:8, pret_auto:44, essence:22, entretien_auto:8, bouffe:64, assurances:16, ass_vie:12, maintenance:8, autres_dep:12 } },
+  BD: { income:350,  cats:{ hypotheques:88, frais_condo:15, taxes:10, bell:4, hydro:7, pret_auto:38, essence:20, entretien_auto:7, bouffe:56, assurances:14, ass_vie:10, maintenance:7, autres_dep:10 } },
+  TH: { income:1200, cats:{ hypotheques:320, frais_condo:55, taxes:36, bell:16, hydro:22, pret_auto:138, essence:68, entretien_auto:24, bouffe:190, assurances:48, ass_vie:38, maintenance:24, autres_dep:38 } },
+  VN: { income:700,  cats:{ hypotheques:185, frais_condo:32, taxes:20, bell:8, hydro:12, pret_auto:78, essence:40, entretien_auto:14, bouffe:112, assurances:28, ass_vie:20, maintenance:14, autres_dep:20 } },
+  PH: { income:600,  cats:{ hypotheques:158, frais_condo:27, taxes:18, bell:7, hydro:10, pret_auto:68, essence:34, entretien_auto:12, bouffe:96, assurances:24, ass_vie:18, maintenance:12, autres_dep:18 } },
+  ID: { income:700,  cats:{ hypotheques:182, frais_condo:31, taxes:20, bell:8, hydro:11, pret_auto:76, essence:38, entretien_auto:13, bouffe:110, assurances:27, ass_vie:20, maintenance:13, autres_dep:20 } },
+  MY: { income:1500, cats:{ hypotheques:400, frais_condo:68, taxes:44, bell:18, hydro:22, pret_auto:168, essence:84, entretien_auto:28, bouffe:238, assurances:60, ass_vie:46, maintenance:28, autres_dep:46 } },
+  TW: { income:2800, cats:{ hypotheques:750, frais_condo:130, taxes:90, bell:30, hydro:48, pret_auto:248, essence:124, entretien_auto:46, bouffe:350, assurances:90, ass_vie:70, maintenance:46, autres_dep:70 } },
+  NP: { income:300,  cats:{ hypotheques:75, frais_condo:13, taxes:9, bell:4, hydro:6, pret_auto:32, essence:17, entretien_auto:6, bouffe:48, assurances:12, ass_vie:9, maintenance:6, autres_dep:9 } },
+  LK: { income:500,  cats:{ hypotheques:128, frais_condo:22, taxes:14, bell:6, hydro:10, pret_auto:56, essence:28, entretien_auto:10, bouffe:80, assurances:20, ass_vie:14, maintenance:10, autres_dep:14 } },
+  KH: { income:500,  cats:{ hypotheques:130, frais_condo:22, taxes:14, bell:6, hydro:10, pret_auto:57, essence:28, entretien_auto:10, bouffe:80, assurances:20, ass_vie:14, maintenance:10, autres_dep:14 } },
+  MM: { income:350,  cats:{ hypotheques:88, frais_condo:15, taxes:10, bell:4, hydro:7, pret_auto:38, essence:20, entretien_auto:7, bouffe:56, assurances:14, ass_vie:10, maintenance:7, autres_dep:10 } },
+  IL: { income:4500, cats:{ hypotheques:1300, frais_condo:220, taxes:180, bell:45, hydro:80, pret_auto:380, essence:180, entretien_auto:80, bouffe:460, assurances:140, ass_vie:110, maintenance:80, autres_dep:110 } },
+
+  // ── MOYEN-ORIENT ────────────────────────────────────────────────────────────
+  AE: { income:5500, cats:{ hypotheques:1600, frais_condo:280, taxes:0, bell:60, hydro:50, pret_auto:480, essence:80, entretien_auto:100, bouffe:540, assurances:160, ass_vie:130, maintenance:100, autres_dep:130 } },
+  SA: { income:4500, cats:{ hypotheques:1200, frais_condo:220, taxes:0, bell:50, hydro:40, pret_auto:400, essence:40, entretien_auto:80, bouffe:440, assurances:130, ass_vie:100, maintenance:80, autres_dep:100 } },
+  QA: { income:6000, cats:{ hypotheques:1800, frais_condo:300, taxes:0, bell:65, hydro:50, pret_auto:520, essence:50, entretien_auto:110, bouffe:580, assurances:175, ass_vie:140, maintenance:110, autres_dep:140 } },
+  KW: { income:5500, cats:{ hypotheques:1600, frais_condo:275, taxes:0, bell:60, hydro:45, pret_auto:480, essence:30, entretien_auto:100, bouffe:535, assurances:160, ass_vie:130, maintenance:100, autres_dep:130 } },
+  BH: { income:3500, cats:{ hypotheques:950, frais_condo:165, taxes:0, bell:40, hydro:35, pret_auto:300, essence:25, entretien_auto:60, bouffe:340, assurances:100, ass_vie:80, maintenance:60, autres_dep:80 } },
+  OM: { income:3000, cats:{ hypotheques:820, frais_condo:140, taxes:0, bell:35, hydro:30, pret_auto:260, essence:22, entretien_auto:55, bouffe:295, assurances:88, ass_vie:70, maintenance:55, autres_dep:70 } },
+  JO: { income:1500, cats:{ hypotheques:400, frais_condo:68, taxes:44, bell:18, hydro:22, pret_auto:132, essence:66, entretien_auto:24, bouffe:148, assurances:44, ass_vie:34, maintenance:24, autres_dep:34 } },
+  LB: { income:1200, cats:{ hypotheques:320, frais_condo:55, taxes:35, bell:14, hydro:18, pret_auto:106, essence:54, entretien_auto:18, bouffe:118, assurances:36, ass_vie:26, maintenance:18, autres_dep:26 } },
+  TR: { income:1500, cats:{ hypotheques:400, frais_condo:70, taxes:48, bell:18, hydro:24, pret_auto:135, essence:67, entretien_auto:25, bouffe:150, assurances:45, ass_vie:35, maintenance:25, autres_dep:35 } },
+  IR: { income:600,  cats:{ hypotheques:155, frais_condo:27, taxes:18, bell:8, hydro:10, pret_auto:52, essence:10, entretien_auto:10, bouffe:58, assurances:17, ass_vie:12, maintenance:10, autres_dep:12 } },
+
+  // ── OCÉANIE ─────────────────────────────────────────────────────────────────
+  NZ: { income:5500, cats:{ hypotheques:1800, frais_condo:300, taxes:250, bell:70, hydro:100, pret_auto:450, essence:180, entretien_auto:90, bouffe:560, assurances:170, ass_vie:135, maintenance:90, autres_dep:115 } },
+  FJ: { income:1200, cats:{ hypotheques:320, frais_condo:55, taxes:36, bell:18, hydro:22, pret_auto:130, essence:65, entretien_auto:22, bouffe:190, assurances:48, ass_vie:38, maintenance:22, autres_dep:38 } },
+  PG: { income:800,  cats:{ hypotheques:210, frais_condo:36, taxes:24, bell:10, hydro:14, pret_auto:88, essence:44, entretien_auto:14, bouffe:126, assurances:32, ass_vie:24, maintenance:14, autres_dep:24 } },
 };
 
 async function detectRegionDefaults() {
@@ -1524,67 +1666,72 @@ async function deleteTxRemote(id) {
 async function save() {}
 
 // ── SETTINGS ──────────────────────────────────────────────────────────────────
+// ── SETTINGS: month-aware load ────────────────────────────────────────────────
+// Strategy:
+//   1. Load "base" settings (no month_key) → custom cats/groups/names + fallback budgets
+//   2. Load month settings (month_key = YYYY-MM) → override budgets/targets for that month
+//   3. If neither exists → apply regional defaults and save as base
+
+function currentMonthKey() {
+  return `${viewYear}-${String(viewMonth+1).padStart(2,'0')}`;
+}
+
 async function loadSettings() {
   if(!currentUser) return;
   try {
-    const { data, error } = await supa
+    // Load ALL settings rows for this user at once (base + months)
+    const { data: rows, error } = await supa
       .from('settings')
       .select('*')
-      .eq('user_id', currentUser.id)
-      .maybeSingle(); // maybeSingle returns null instead of throwing on no rows
+      .eq('user_id', currentUser.id);
     if(error) throw error;
-    if(data) {
-      userSettings = {
-        income_target:  parseFloat(data.income_target)  || 6700,
-        expense_budget: parseFloat(data.expense_budget) || 4428,
-        savings_target: parseFloat(data.savings_target) || 2272,
-        category_budgets: data.category_budgets || {}
-      };
-      // Restore budgets
-      CATS.forEach(c => {
-        if(userSettings.category_budgets[c.id] !== undefined)
-          c.budget = parseFloat(userSettings.category_budgets[c.id]);
-      });
-      // Restore custom names
-      const catNames = data.category_names || {};
+
+    const baseRow  = (rows||[]).find(r => r.month_key === '' || r.month_key === null || !r.month_key);
+    const monthRow = (rows||[]).find(r => r.month_key === currentMonthKey());
+    const activeRow = monthRow || baseRow;
+
+    if(baseRow) {
+      // Restore structure (cats/groups/names) from base row
+      const catNames = baseRow.category_names || {};
       CATS.forEach(c => { if(catNames[c.id]) c.name = catNames[c.id]; });
-      const groupNames = data.group_names || {};
+      const groupNames = baseRow.group_names || {};
       GROUPS.forEach(g => { if(groupNames[g.id]) g.label = groupNames[g.id]; });
-      // Restore custom categories
-      if(data.custom_cats) {
-        try {
-          const customCats = JSON.parse(data.custom_cats);
-          customCats.forEach(c => { if(!CATS.find(x=>x.id===c.id)) CATS.push(c); });
-        } catch(e) {}
+      if(baseRow.custom_cats) {
+        try { JSON.parse(baseRow.custom_cats).forEach(c => { if(!CATS.find(x=>x.id===c.id)) CATS.push(c); }); } catch(e) {}
       }
-      // Restore custom groups
-      if(data.custom_groups) {
-        try {
-          const customGroups = JSON.parse(data.custom_groups);
-          customGroups.forEach(g => { if(!GROUPS.find(x=>x.id===g.id)) GROUPS.push(g); });
-        } catch(e) {}
+      if(baseRow.custom_groups) {
+        try { JSON.parse(baseRow.custom_groups).forEach(g => { if(!GROUPS.find(x=>x.id===g.id)) GROUPS.push(g); }); } catch(e) {}
       }
-      BUDGET_TOTAL   = userSettings.expense_budget;
-      INCOME_TARGET  = userSettings.income_target;
-      SAVINGS_TARGET = userSettings.savings_target;
     }
-    // New user — no settings row yet → apply regional defaults
-    if(!data) {
+
+    if(activeRow) {
+      // Apply budgets & targets from month row (or base if no month row)
+      const catBudgets = activeRow.category_budgets || {};
+      userSettings = {
+        income_target:    parseFloat(activeRow.income_target)  || 6700,
+        expense_budget:   parseFloat(activeRow.expense_budget) || 4428,
+        savings_target:   parseFloat(activeRow.savings_target) || 2272,
+        category_budgets: catBudgets,
+        has_month_override: !!monthRow
+      };
+      CATS.forEach(c => {
+        if(catBudgets[c.id] !== undefined) c.budget = parseFloat(catBudgets[c.id]);
+      });
+      INCOME_TARGET  = userSettings.income_target;
+      BUDGET_TOTAL   = userSettings.expense_budget;
+      SAVINGS_TARGET = userSettings.savings_target;
+    } else {
+      // Brand new user — apply regional defaults
       const regional = await detectRegionDefaults();
       INCOME_TARGET  = regional.income;
       BUDGET_TOTAL   = Object.values(regional.cats).reduce((s,v)=>s+v, 0);
       SAVINGS_TARGET = INCOME_TARGET - BUDGET_TOTAL;
-      // Apply to CATS
-      CATS.forEach(c => {
-        if(regional.cats[c.id] !== undefined) c.budget = regional.cats[c.id];
-      });
+      CATS.forEach(c => { if(regional.cats[c.id] !== undefined) c.budget = regional.cats[c.id]; });
       userSettings = {
-        income_target:  INCOME_TARGET,
-        expense_budget: BUDGET_TOTAL,
-        savings_target: SAVINGS_TARGET,
-        category_budgets: regional.cats
+        income_target: INCOME_TARGET, expense_budget: BUDGET_TOTAL,
+        savings_target: SAVINGS_TARGET, category_budgets: regional.cats, has_month_override: false
       };
-      console.log('Regional defaults applied:', regional);
+      console.log('Regional defaults applied for new user');
     }
   } catch(e) {
     console.error('Settings load failed:', e);
@@ -1619,44 +1766,66 @@ function flushDOMToMemory() {
 }
 
 // ── BUILD PAYLOAD FROM MEMORY ─────────────────────────────────────────────────
-function buildSettingsPayload() {
+function buildSettingsPayload(monthKey = null) {
   const catBudgets = {}, catNames = {}, groupNames = {};
   CATS.forEach(c => { catBudgets[c.id] = c.budget; catNames[c.id] = c.name; });
   GROUPS.forEach(g => { groupNames[g.id] = g.label; });
-  return {
+
+  const base = {
     user_id:          currentUser.id,
     income_target:    INCOME_TARGET,
     expense_budget:   BUDGET_TOTAL,
     savings_target:   SAVINGS_TARGET,
     category_budgets: catBudgets,
-    category_names:   catNames,
-    group_names:      groupNames,
-    custom_cats:      JSON.stringify(CATS.filter(c=>c._custom)),
-    custom_groups:    JSON.stringify(GROUPS.filter(g=>g._custom)),
     updated_at:       new Date().toISOString()
   };
+
+  if(monthKey) {
+    // Month row: only budgets + targets (no structure)
+    return { ...base, month_key: monthKey };
+  } else {
+    // Base row: full structure
+    return {
+      ...base,
+      month_key:      '',
+      category_names: catNames,
+      group_names:    groupNames,
+      custom_cats:    JSON.stringify(CATS.filter(c=>c._custom)),
+      custom_groups:  JSON.stringify(GROUPS.filter(g=>g._custom)),
+    };
+  }
 }
 
 async function saveSettings() {
   if(!currentUser) { toast(t.connectFirst, 'warning'); return; }
 
-  // 1. Sync DOM inputs → memory arrays
   flushDOMToMemory();
 
-  // 2. Show saving indicator
   const btn = document.querySelector('.settings-save-btn');
   if(btn) { btn.disabled = true; btn.innerHTML = `<span class="mi mi-sm">hourglass_empty</span> ${t.saving}`; }
 
   try {
-    const payload = buildSettingsPayload();
-    const { error } = await supa.from('settings').upsert(payload);
-    if(error) throw error;
+    const applyToMonth = document.getElementById('settings-apply-month')?.checked;
+    const mk = applyToMonth ? currentMonthKey() : null;
+
+    // Always save base (structure: cat names, groups, custom cats)
+    const basePayload = buildSettingsPayload(null);
+    const { error: e1 } = await supa.from('settings').upsert(basePayload,
+      { onConflict: 'user_id,month_key' });
+    if(e1) throw e1;
+
+    // If month-specific, also save month row
+    if(mk) {
+      const monthPayload = buildSettingsPayload(mk);
+      const { error: e2 } = await supa.from('settings').upsert(monthPayload,
+        { onConflict: 'user_id,month_key' });
+      if(e2) throw e2;
+    }
 
     userSettings = {
-      income_target:    INCOME_TARGET,
-      expense_budget:   BUDGET_TOTAL,
-      savings_target:   SAVINGS_TARGET,
-      category_budgets: payload.category_budgets
+      income_target: INCOME_TARGET, expense_budget: BUDGET_TOTAL,
+      savings_target: SAVINGS_TARGET, category_budgets: basePayload.category_budgets,
+      has_month_override: !!mk
     };
 
     toast(t.settingsSaved, 'check_circle');
@@ -1669,10 +1838,55 @@ async function saveSettings() {
   }
 }
 
+function updateScopeLabel() {
+  const checked = document.getElementById('settings-apply-month')?.checked;
+  const badge   = document.getElementById('scopeBadge');
+  const monthNames = LANG==='fr'
+    ? ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
+    : ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const monthLabel = `${monthNames[viewMonth]} ${viewYear}`;
+
+  const scopeTitle = document.getElementById('scopeTitle');
+  const scopeSub   = document.getElementById('scopeSub');
+  if(scopeTitle) scopeTitle.textContent = LANG==='fr'
+    ? `Appliquer à ${monthLabel} seulement`
+    : `Apply to ${monthLabel} only`;
+  if(scopeSub) scopeSub.textContent = LANG==='fr'
+    ? 'Désactivé = n’s’applique pas à ce mois'
+    : 'Off = applies to all months';
+
+  if(badge) {
+    if(checked) {
+      badge.style.display = 'flex';
+      badge.innerHTML = `<span class="mi mi-sm">event</span> ${LANG==='fr'?'Ce mois':'This month'}: ${monthLabel}`;
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  // Show override badge if current month has overrides
+  if(userSettings.has_month_override) {
+    const ovBadge = document.getElementById('scopeOverrideBadge');
+    if(ovBadge) {
+      ovBadge.style.display = 'flex';
+      ovBadge.textContent   = LANG==='fr'
+        ? `⚡ Objectifs personnalisés pour ${monthLabel}`
+        : `⚡ Custom goals for ${monthLabel}`;
+    }
+  }
+}
+
 function renderSettingsView() {
   document.getElementById('s-income').value  = userSettings.income_target;
   document.getElementById('s-expense').value = userSettings.expense_budget;
   document.getElementById('s-savings').value = userSettings.savings_target;
+
+  // Update scope toggle label for current month
+  updateScopeLabel();
+
+  // Pre-check month toggle if current month already has an override
+  const applyChk = document.getElementById('settings-apply-month');
+  if(applyChk) applyChk.checked = !!userSettings.has_month_override;
 
   const container = document.getElementById('settingsCatSections');
   container.innerHTML = '';
@@ -2229,33 +2443,69 @@ function toggleGroup(id){
 
 function renderOverview(){
   const mo=thisMo();
-  const income=mo.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const income =mo.filter(t=>t.type==='income' ).reduce((s,t)=>s+t.amount,0);
   const expense=mo.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
   const savings=income-expense;
 
-  document.getElementById('ov-income').textContent=fmt(income);
-  document.getElementById('ov-expense').textContent=fmt(expense);
-  document.getElementById('ov-savings').textContent=fmt(savings);
+  // ── KPI values ──────────────────────────────────────────────────────────────
+  document.getElementById('ov-income').textContent  = fmt(income);
+  document.getElementById('ov-expense').textContent = fmt(expense);
+  document.getElementById('ov-savings').textContent = fmt(savings);
+
+  // ── Target labels ───────────────────────────────────────────────────────────
+  const setEl = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+  setEl('ov-income-target',  fmt(INCOME_TARGET));
+  setEl('ov-expense-target', fmt(BUDGET_TOTAL));
+  setEl('ov-savings-target', fmt(SAVINGS_TARGET));
+  setEl('ov-bar-max',        fmt(BUDGET_TOTAL));
+  setEl('ov-bar-min',        fmt(0));
+
+  // ── Savings colour ──────────────────────────────────────────────────────────
   const sc=document.getElementById('ov-savings');
   sc.style.color=savings>=SAVINGS_TARGET?'var(--green)':savings>=0?'var(--orange)':'var(--red)';
 
+  // ── Income progress subtitle (% of target) ──────────────────────────────────
+  const incPct = INCOME_TARGET > 0 ? (income/INCOME_TARGET*100) : 0;
+  const incSub = document.getElementById('ov-income-sub');
+  if(incSub) {
+    incSub.textContent = `${incPct.toFixed(0)}% ${t.incomeProgress}`;
+    incSub.style.color = incPct>=100?'var(--green)':incPct>=70?'var(--orange)':'var(--label3)';
+  }
+
+  // ── Expense progress subtitle (% of budget) ──────────────────────────────────
+  const expPct = BUDGET_TOTAL > 0 ? (expense/BUDGET_TOTAL*100) : 0;
+  const expSub = document.getElementById('ov-expense-sub');
+  if(expSub) {
+    expSub.textContent = `${expPct.toFixed(0)}% ${t.expenseProgress}`;
+    expSub.style.color = expPct<70?'var(--green)':expPct<90?'var(--orange)':'var(--red)';
+  }
+
+  // ── Quick-add button tooltips ────────────────────────────────────────────────
+  const aib = document.getElementById('add-income-btn');
+  const aeb = document.getElementById('add-expense-btn');
+  if(aib) aib.title = t.addIncome;
+  if(aeb) aeb.title = t.addExpense;
+
+  // ── Month label in cat section ────────────────────────────────────────────────
+  const catSub = document.getElementById('ov-cat-sub');
+  if(catSub) {
+    const monthNames = LANG==='fr'
+      ? ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
+      : ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    catSub.textContent = `${monthNames[viewMonth]} ${viewYear}`;
+  }
+
+  // ── Budget bar ───────────────────────────────────────────────────────────────
   const pct=Math.min((expense/BUDGET_TOTAL)*100,100);
   const bar=document.getElementById('ov-bar');
   bar.style.width=pct+'%';
   bar.className='bar-inner '+(pct<70?'bar-safe':pct<90?'bar-warn':'bar-over');
-  document.getElementById('ov-bar-meta').textContent=`${fmt(expense)} / ${fmt(BUDGET_TOTAL)}`;
-  // Update target labels from current settings
-  const it = document.getElementById('ov-income-target');
-  const et = document.getElementById('ov-expense-target');
-  const st = document.getElementById('ov-savings-target');
-  const bm = document.getElementById('ov-bar-max');
-  if(it) it.textContent = fmt(INCOME_TARGET);
-  if(et) et.textContent = fmt(BUDGET_TOTAL);
-  if(st) st.textContent = fmt(SAVINGS_TARGET);
-  if(bm) bm.textContent = fmt(BUDGET_TOTAL);
+  setEl('ov-bar-meta', `${fmt(expense)} / ${fmt(BUDGET_TOTAL)}`);
   const pctEl=document.getElementById('ov-bar-pct');
-  pctEl.textContent=pct.toFixed(0)+'%';
-  pctEl.style.color=pct<70?'var(--green)':pct<90?'var(--orange)':'var(--red)';
+  if(pctEl){
+    pctEl.textContent=pct.toFixed(0)+'%';
+    pctEl.style.color=pct<70?'var(--green)':pct<90?'var(--orange)':'var(--red)';
+  }
 
   const expCats=CATS.filter(c=>c.type==='expense'&&c.budget>0);
   const html=GROUPS.map(g=>{
@@ -2299,7 +2549,7 @@ function renderOverview(){
   const recent=mo.slice(0,15);
   const rl=document.getElementById('recentList');
   if(!recent.length){
-    rl.innerHTML=`<div class="empty-tx"><div class="empty-icon"><span class="mi mi-xl">inbox</span></div><div class="empty-title">Aucune transaction</div><div style="font-size:12px">Ajoutez votre première entrée</div></div>`;
+    rl.innerHTML=`<div class="empty-tx"><div class="empty-icon"><span class="mi mi-xl">inbox</span></div><div class="empty-title">${t.noTx}</div><div style="font-size:12px">${t.addFirst}</div></div>`;
   } else {
     rl.innerHTML=recent.map(t=>{
       const cat=getCat(t.cat);
@@ -2323,7 +2573,7 @@ function renderHistory(){
   if(histFilter==='expense') list=list.filter(t=>t.type==='expense');
   list.sort((a,b)=>b.date.localeCompare(a.date));
   const el=document.getElementById('histBody');
-  if(!list.length){ el.innerHTML='<div class="empty-tx"><div class="empty-icon"><span class="mi mi-xl">history</span></div><div class="empty-title">Aucune transaction</div></div>'; return; }
+  if(!list.length){ el.innerHTML=`<div class="empty-tx"><div class="empty-icon"><span class="mi mi-xl">history</span></div><div class="empty-title">${t.noTx||'Aucune transaction'}</div></div>`; return; }
   el.innerHTML=list.map(t=>{
     const cat=getCat(t.cat);
     return `<div class="hist-row" onclick="openEditTx('${t.id}')" style="cursor:pointer">
