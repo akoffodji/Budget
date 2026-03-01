@@ -460,6 +460,122 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 .settings-save-btn:hover { box-shadow: 0 4px 16px rgba(26,115,232,.45); }
 .settings-save-btn:active { transform: scale(.98); }
 
+
+/* ── EDITABLE CATEGORY ROWS ── */
+.settings-row-editable {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; border-bottom: 1px solid var(--sep2);
+  transition: background .1s;
+}
+.settings-row-editable:hover { background: var(--fill4); }
+.settings-row-editable:last-of-type { border-bottom: none; }
+
+.edit-name-input {
+  flex: 1; padding: 6px 10px; font-size: 14px; font-weight: 500;
+  background: var(--fill3); border: 1.5px solid transparent;
+  border-radius: var(--radius); color: var(--label);
+  font-family: inherit; outline: none; min-width: 0;
+  transition: border-color .2s, background .15s;
+}
+.edit-name-input:focus { border-color: var(--blue); background: var(--bg2); }
+
+.edit-budget-wrap { position: relative; flex-shrink: 0; }
+.edit-budget-input {
+  width: 100px; padding: 6px 28px 6px 8px; font-size: 14px; font-weight: 600;
+  background: var(--fill3); border: 1.5px solid transparent;
+  border-radius: var(--radius); color: var(--label);
+  font-family: inherit; outline: none; text-align: right;
+  transition: border-color .2s, background .15s;
+}
+.edit-budget-input:focus { border-color: var(--blue); background: var(--bg2); }
+.edit-budget-suffix {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  font-size: 11px; color: var(--label3); pointer-events: none;
+}
+
+.edit-del-btn {
+  width: 28px; height: 28px; border-radius: 50%; border: none;
+  background: none; cursor: pointer; color: var(--label3);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background .15s, color .15s;
+}
+.edit-del-btn:hover { background: var(--red-light); color: var(--red); }
+
+.add-cat-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; width: 100%; border: none;
+  background: none; cursor: pointer; font-family: inherit;
+  font-size: 13px; font-weight: 600; color: var(--blue);
+  border-top: 1px solid var(--sep2); transition: background .15s;
+}
+.add-cat-btn:hover { background: var(--blue-light); }
+
+.add-group-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px; width: 100%; border: 2px dashed var(--sep);
+  border-radius: var(--radius-xl); background: none; cursor: pointer;
+  font-family: inherit; font-size: 14px; font-weight: 600; color: var(--label3);
+  transition: border-color .15s, color .15s, background .15s;
+  margin-bottom: 20px;
+}
+.add-group-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  z-index: 2000; display: flex; align-items: center; justify-content: center;
+  padding: 24px; opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal-card {
+  background: var(--bg2); border-radius: var(--radius-xl);
+  width: 100%; max-width: 360px; overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  transform: scale(.95) translateY(10px);
+  transition: transform .2s;
+}
+.modal-overlay.open .modal-card { transform: scale(1) translateY(0); }
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px; border-bottom: 1px solid var(--sep2);
+}
+.modal-title { font-size: 16px; font-weight: 700; }
+.modal-close {
+  width: 32px; height: 32px; border-radius: 50%; border: none;
+  background: var(--fill3); color: var(--label3); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.modal-close:hover { background: var(--fill2); }
+.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.modal-field { display: flex; flex-direction: column; gap: 6px; }
+.modal-label { font-size: 12px; font-weight: 600; color: var(--label3); letter-spacing: .04em; text-transform: uppercase; }
+.modal-input {
+  padding: 11px 14px; background: var(--fill3); border: 1.5px solid transparent;
+  border-radius: var(--radius); color: var(--label); font-family: inherit;
+  font-size: 15px; outline: none; transition: border-color .2s, background .15s;
+}
+.modal-input:focus { border-color: var(--blue); background: var(--bg2); }
+.modal-footer { padding: 0 20px 20px; display: flex; gap: 10px; }
+.modal-btn {
+  flex: 1; padding: 12px; border-radius: var(--radius-lg); border: none;
+  font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: opacity .15s;
+}
+.modal-btn:hover { opacity: .85; }
+.modal-btn-cancel { background: var(--fill3); color: var(--label2); }
+.modal-btn-confirm { background: var(--blue); color: #fff; }
+
+/* ── SETTINGS GROUP HEADER EDITABLE ── */
+.settings-group-name-input {
+  flex: 1; font-size: 15px; font-weight: 700; background: transparent;
+  border: none; border-bottom: 2px solid transparent; color: var(--label);
+  font-family: inherit; outline: none; padding: 2px 4px;
+  transition: border-color .2s;
+}
+.settings-group-name-input:focus { border-bottom-color: var(--blue); }
+
 @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 .summary-card,.budget-bar-card,.cat-card,.tx-card,.hist-table { animation:fadeUp .3s ease both; }
 
@@ -551,6 +667,9 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
         <button class="month-today-btn hidden" id="mnToday" onclick="goToday()">Aujourd'hui</button>
       </div>
       <div class="topbar-right">
+        <button class="icon-btn" onclick="showView('settings')" title="Objectifs">
+          <span class="mi">tune</span>
+        </button>
         <button class="icon-btn" onclick="toggleTheme()" title="Thème">
           <span class="mi" id="themeIcon">dark_mode</span>
         </button>
@@ -764,6 +883,54 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
   </div>
 </div>
 <div class="toast" id="toast"></div>
+
+<!-- ADD CATEGORY MODAL -->
+<div class="modal-overlay" id="addCatModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Nouvelle catégorie</div>
+      <button class="modal-close" onclick="closeModal()"><span class="mi">close</span></button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <div class="modal-label">Nom</div>
+        <input class="modal-input" id="modal-name" type="text" placeholder="ex: Netflix">
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">Budget mensuel</div>
+        <input class="modal-input" id="modal-budget" type="number" placeholder="0" min="0" step="10">
+      </div>
+      <div class="modal-field" id="modal-group-field">
+        <div class="modal-label">Groupe</div>
+        <select class="modal-input" id="modal-group"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Annuler</button>
+      <button class="modal-btn modal-btn-confirm" id="modalConfirmBtn" onclick="confirmModal()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD GROUP MODAL -->
+<div class="modal-overlay" id="addGroupModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title">Nouveau groupe</div>
+      <button class="modal-close" onclick="closeGroupModal()"><span class="mi">close</span></button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <div class="modal-label">Nom du groupe</div>
+        <input class="modal-input" id="gmodal-name" type="text" placeholder="ex: Loisirs">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn modal-btn-cancel" onclick="closeGroupModal()">Annuler</button>
+      <button class="modal-btn modal-btn-confirm" onclick="confirmGroupModal()">Créer</button>
+    </div>
+  </div>
+</div>
 <div class="loading-overlay" id="loadingOverlay">
   <div class="loading-spinner"></div>
   <div class="loading-label">Chargement des données…</div>
@@ -928,10 +1095,30 @@ async function loadSettings() {
         savings_target: parseFloat(data.savings_target) || 2272,
         category_budgets: data.category_budgets || {}
       };
+      // Restore budgets
       CATS.forEach(c => {
         if(userSettings.category_budgets[c.id] !== undefined)
           c.budget = parseFloat(userSettings.category_budgets[c.id]);
       });
+      // Restore custom names
+      const catNames = data.category_names || {};
+      CATS.forEach(c => { if(catNames[c.id]) c.name = catNames[c.id]; });
+      const groupNames = data.group_names || {};
+      GROUPS.forEach(g => { if(groupNames[g.id]) g.label = groupNames[g.id]; });
+      // Restore custom categories
+      if(data.custom_cats) {
+        try {
+          const customCats = JSON.parse(data.custom_cats);
+          customCats.forEach(c => { if(!CATS.find(x=>x.id===c.id)) CATS.push(c); });
+        } catch(e) {}
+      }
+      // Restore custom groups
+      if(data.custom_groups) {
+        try {
+          const customGroups = JSON.parse(data.custom_groups);
+          customGroups.forEach(g => { if(!GROUPS.find(x=>x.id===g.id)) GROUPS.push(g); });
+        } catch(e) {}
+      }
       BUDGET_TOTAL   = userSettings.expense_budget;
       INCOME_TARGET  = userSettings.income_target;
       SAVINGS_TARGET = userSettings.savings_target;
@@ -943,39 +1130,57 @@ async function loadSettings() {
   }
 }
 
-async function saveSettings() {
-  if(!currentUser) { toast("Connectez-vous d'abord", 'warning'); return; }
-
-  // Collect global targets
+// ── COLLECT SETTINGS FROM DOM ────────────────────────────────────────────────
+function collectSettingsFromDOM() {
   const incomeTarget  = parseFloat(document.getElementById('s-income').value)  || 6700;
   const expenseBudget = parseFloat(document.getElementById('s-expense').value) || 4428;
   const savingsTarget = parseFloat(document.getElementById('s-savings').value) || 2272;
-
-  // Collect per-category budgets
   const catBudgets = {};
+  const catNames   = {};
   CATS.filter(c=>c.type==='expense').forEach(c => {
-    const el = document.getElementById('s-cat-' + c.id);
-    if(el) catBudgets[c.id] = parseFloat(el.value) || 0;
+    const budgetEl = document.getElementById('s-cat-budget-' + c.id);
+    const nameEl   = document.getElementById('s-cat-name-'   + c.id);
+    if(budgetEl) catBudgets[c.id] = parseFloat(budgetEl.value) || 0;
+    if(nameEl)   catNames[c.id]   = nameEl.value.trim() || c.name;
   });
+  const groupNames = {};
+  GROUPS.forEach(g => {
+    const el = document.getElementById('s-group-name-' + g.id);
+    if(el) groupNames[g.id] = el.value.trim() || g.label;
+  });
+  return { incomeTarget, expenseBudget, savingsTarget, catBudgets, catNames, groupNames };
+}
+
+async function saveSettings() {
+  if(!currentUser) { toast("Connectez-vous d'abord", 'warning'); return; }
+  const { incomeTarget, expenseBudget, savingsTarget, catBudgets, catNames, groupNames } = collectSettingsFromDOM();
 
   try {
     const { error } = await supa.from('settings').upsert({
-      user_id:         currentUser.id,
-      income_target:   incomeTarget,
-      expense_budget:  expenseBudget,
-      savings_target:  savingsTarget,
+      user_id:          currentUser.id,
+      income_target:    incomeTarget,
+      expense_budget:   expenseBudget,
+      savings_target:   savingsTarget,
       category_budgets: catBudgets,
-      updated_at:      new Date().toISOString()
+      category_names:   catNames,
+      group_names:      groupNames,
+      custom_cats:      JSON.stringify(CATS.filter(c=>c._custom)),
+      custom_groups:    JSON.stringify(GROUPS.filter(g=>g._custom)),
+      updated_at:       new Date().toISOString()
     });
     if(error) throw error;
 
     // Apply locally
-    userSettings = { income_target:incomeTarget, expense_budget:expenseBudget, savings_target:savingsTarget, category_budgets:catBudgets };
     BUDGET_TOTAL   = expenseBudget;
     INCOME_TARGET  = incomeTarget;
     SAVINGS_TARGET = savingsTarget;
-    CATS.forEach(c => { if(catBudgets[c.id] !== undefined) c.budget = catBudgets[c.id]; });
+    CATS.forEach(c => {
+      if(catBudgets[c.id] !== undefined) c.budget = catBudgets[c.id];
+      if(catNames[c.id])   c.name   = catNames[c.id];
+    });
+    GROUPS.forEach(g => { if(groupNames[g.id]) g.label = groupNames[g.id]; });
 
+    userSettings = { income_target:incomeTarget, expense_budget:expenseBudget, savings_target:savingsTarget, category_budgets:catBudgets };
     toast('Objectifs enregistrés !', 'check_circle');
     showView('overview');
   } catch(e) {
@@ -985,72 +1190,195 @@ async function saveSettings() {
 }
 
 function renderSettingsView() {
-  // Fill global fields
   document.getElementById('s-income').value  = userSettings.income_target;
   document.getElementById('s-expense').value = userSettings.expense_budget;
   document.getElementById('s-savings').value = userSettings.savings_target;
 
-  // Build per-group / per-category sections
   const container = document.getElementById('settingsCatSections');
-  container.innerHTML = GROUPS.map(g => {
+  container.innerHTML = '';
+
+  GROUPS.forEach(g => {
     const gCats = g.cats.map(id => CATS.find(c=>c.id===id)).filter(Boolean);
-    const rows = gCats.map(c => `
-      <div class="settings-row">
-        <div class="settings-row-icon" style="background:${c.color}18;color:${c.color}">
-          <span class="mi">${c.icon}</span>
-        </div>
-        <div class="settings-row-label">
-          <div class="settings-row-name">${c.name}</div>
-        </div>
-        <div class="settings-input-wrap">
-          <input class="settings-input" type="number" id="s-cat-${c.id}"
-            value="${c.budget}" min="0" step="50" oninput="updateCatTotal('${g.id}')">
-          <span class="settings-input-suffix">$/mois</span>
-        </div>
-      </div>`).join('');
-
     const gTotal = gCats.reduce((s,c)=>s+c.budget,0);
-    return `
-    <div class="settings-section">
-      <div class="settings-section-header">
-        <div class="settings-section-icon" style="background:${g.bg};color:${g.color}">
-          <span class="mi">${g.icon}</span>
-        </div>
-        <div>
-          <div class="settings-section-title">${g.label}</div>
-          <div class="settings-section-sub">Budget par catégorie</div>
-        </div>
-      </div>
-      ${rows}
-      <div class="settings-total-row">
-        <span class="settings-total-label">Total ${g.label}</span>
-        <span class="settings-total-value ok" id="gt-${g.id}">${fmt(gTotal)} / mois</span>
-      </div>
-    </div>`;
-  }).join('');
 
-  updateSettingsTotal();
+    const section = document.createElement('div');
+    section.className = 'settings-section';
+    section.id = 'settings-group-' + g.id;
+
+    // Group header with editable name
+    const header = document.createElement('div');
+    header.className = 'settings-section-header';
+    header.innerHTML = `
+      <div class="settings-section-icon" style="background:${g.bg};color:${g.color}">
+        <span class="mi">${g.icon}</span>
+      </div>
+      <div style="flex:1">
+        <input class="settings-group-name-input" id="s-group-name-${g.id}"
+          value="${g.label}" placeholder="Nom du groupe">
+        <div class="settings-section-sub">Budget par catégorie</div>
+      </div>
+      ${g._custom ? `<button class="edit-del-btn" onclick="deleteGroup('${g.id}')" title="Supprimer le groupe">
+        <span class="mi mi-sm">delete</span></button>` : ''}
+    `;
+    section.appendChild(header);
+
+    // Category rows
+    const rowsContainer = document.createElement('div');
+    rowsContainer.id = 'group-rows-' + g.id;
+    gCats.forEach(c => {
+      rowsContainer.appendChild(makeCatRow(c, g.id));
+    });
+    section.appendChild(rowsContainer);
+
+    // Add category button
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-cat-btn';
+    addBtn.innerHTML = `<span class="mi mi-sm">add_circle</span> Ajouter une catégorie`;
+    addBtn.onclick = () => openAddCatModal(g.id);
+    section.appendChild(addBtn);
+
+    // Group total
+    const totalRow = document.createElement('div');
+    totalRow.className = 'settings-total-row';
+    totalRow.innerHTML = `
+      <span class="settings-total-label">Total ${g.label}</span>
+      <span class="settings-total-value ok" id="gt-${g.id}">${fmt(gTotal)} / mois</span>`;
+    section.appendChild(totalRow);
+
+    container.appendChild(section);
+  });
+
+  // Add group button
+  const addGroupBtn = document.createElement('button');
+  addGroupBtn.className = 'add-group-btn';
+  addGroupBtn.innerHTML = `<span class="mi">add</span> Nouveau groupe`;
+  addGroupBtn.onclick = openAddGroupModal;
+  container.appendChild(addGroupBtn);
 }
 
-function updateCatTotal(groupId) {
+function makeCatRow(c, groupId) {
+  const row = document.createElement('div');
+  row.className = 'settings-row-editable';
+  row.id = 'cat-row-' + c.id;
+  row.innerHTML = `
+    <div class="settings-row-icon" style="background:${c.color}18;color:${c.color};width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <span class="mi">${c.icon}</span>
+    </div>
+    <input class="edit-name-input" id="s-cat-name-${c.id}"
+      value="${c.name}" placeholder="Nom catégorie">
+    <div class="edit-budget-wrap">
+      <input class="edit-budget-input" id="s-cat-budget-${c.id}"
+        type="number" value="${c.budget}" min="0" step="50"
+        oninput="updateGroupTotal('${groupId}')">
+      <span class="edit-budget-suffix">$/m</span>
+    </div>
+    <button class="edit-del-btn" onclick="deleteCat('${c.id}','${groupId}')" title="Supprimer">
+      <span class="mi mi-sm">delete</span>
+    </button>`;
+  return row;
+}
+
+function updateGroupTotal(groupId) {
   const g = GROUPS.find(x=>x.id===groupId);
   if(!g) return;
   const total = g.cats
-    .map(id => parseFloat(document.getElementById('s-cat-'+id)?.value)||0)
-    .reduce((s,v)=>s+v,0);
+    .map(id => parseFloat(document.getElementById('s-cat-budget-'+id)?.value)||0)
+    .reduce((s,v)=>s+v, 0);
   const el = document.getElementById('gt-'+groupId);
   if(el) el.textContent = fmt(total) + ' / mois';
-  updateSettingsTotal();
 }
 
-function updateSettingsTotal() {
-  const budget = parseFloat(document.getElementById('s-expense')?.value)||0;
-  const allCatTotal = CATS.filter(c=>c.type==='expense')
-    .reduce((s,c) => {
-      const el = document.getElementById('s-cat-'+c.id);
-      return s + (el ? parseFloat(el.value)||0 : c.budget);
-    }, 0);
-  // Update expense total indicator if needed
+function updateSettingsTotal() {}
+
+// ── DELETE CAT / GROUP ────────────────────────────────────────────────────────
+function deleteCat(catId, groupId) {
+  const g = GROUPS.find(x=>x.id===groupId);
+  if(g) g.cats = g.cats.filter(id=>id!==catId);
+  const idx = CATS.findIndex(c=>c.id===catId);
+  if(idx>-1) CATS.splice(idx,1);
+  const row = document.getElementById('cat-row-'+catId);
+  if(row) row.remove();
+  updateGroupTotal(groupId);
+  toast('Catégorie supprimée', 'delete');
+}
+
+function deleteGroup(groupId) {
+  const idx = GROUPS.findIndex(g=>g.id===groupId);
+  if(idx>-1) GROUPS.splice(idx,1);
+  const el = document.getElementById('settings-group-'+groupId);
+  if(el) el.remove();
+  toast('Groupe supprimé', 'delete');
+}
+
+// ── ADD CATEGORY MODAL ────────────────────────────────────────────────────────
+let _modalGroupId = null;
+
+function openAddCatModal(groupId) {
+  _modalGroupId = groupId;
+  document.getElementById('modal-name').value   = '';
+  document.getElementById('modal-budget').value = '';
+  document.getElementById('modal-group-field').style.display = 'none';
+  document.getElementById('modalTitle').textContent = 'Nouvelle catégorie';
+  document.getElementById('modalConfirmBtn').textContent = 'Ajouter';
+  document.getElementById('addCatModal').classList.add('open');
+  setTimeout(()=>document.getElementById('modal-name').focus(), 200);
+}
+
+function closeModal() {
+  document.getElementById('addCatModal').classList.remove('open');
+}
+
+function confirmModal() {
+  const name   = document.getElementById('modal-name').value.trim();
+  const budget = parseFloat(document.getElementById('modal-budget').value) || 0;
+  if(!name) { document.getElementById('modal-name').focus(); return; }
+
+  const id = 'custom_' + Date.now();
+  const colors = ['#1a73e8','#1e8e3e','#d93025','#e37400','#7b1fa2','#0097a7','#d81b60'];
+  const icons  = ['label','star','bookmark','local_offer','circle','hexagon','pentagon'];
+  const color  = colors[Math.floor(Math.random()*colors.length)];
+  const icon   = icons[Math.floor(Math.random()*icons.length)];
+
+  const newCat = { id, name, budget, color, icon, type:'expense', _custom:true };
+  CATS.push(newCat);
+
+  const g = GROUPS.find(x=>x.id===_modalGroupId);
+  if(g) {
+    g.cats.push(id);
+    const rowsContainer = document.getElementById('group-rows-'+_modalGroupId);
+    if(rowsContainer) rowsContainer.appendChild(makeCatRow(newCat, _modalGroupId));
+    updateGroupTotal(_modalGroupId);
+  }
+
+  closeModal();
+  toast(`Catégorie "${name}" ajoutée`, 'check_circle');
+}
+
+// ── ADD GROUP MODAL ───────────────────────────────────────────────────────────
+function openAddGroupModal() {
+  document.getElementById('gmodal-name').value = '';
+  document.getElementById('addGroupModal').classList.add('open');
+  setTimeout(()=>document.getElementById('gmodal-name').focus(), 200);
+}
+
+function closeGroupModal() {
+  document.getElementById('addGroupModal').classList.remove('open');
+}
+
+function confirmGroupModal() {
+  const name = document.getElementById('gmodal-name').value.trim();
+  if(!name) { document.getElementById('gmodal-name').focus(); return; }
+
+  const id = 'group_' + Date.now();
+  const groupColors = ['#1a73e8','#1e8e3e','#7b1fa2','#e37400','#d93025'];
+  const groupBgs    = ['#e8f0fe','#e6f4ea','#f3e5f5','#fff3e0','#fce8e6'];
+  const rand = Math.floor(Math.random()*5);
+  const newGroup = { id, label:name, icon:'category', color:groupColors[rand], bg:groupBgs[rand], cats:[], _custom:true };
+  GROUPS.push(newGroup);
+
+  closeGroupModal();
+  renderSettingsView(); // re-render to show new group
+  toast(`Groupe "${name}" créé`, 'check_circle');
 }
 
 const fmt  = n=>new Intl.NumberFormat('fr-CA',{style:'currency',currency:'CAD',maximumFractionDigits:0}).format(n);
