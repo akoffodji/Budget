@@ -1153,7 +1153,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       </div>
 
     <footer class="app-footer">
-        <div class="footer-version" id="footerVersion">v1.260301.8</div>
+        <div class="footer-version" id="footerVersion">v1.260301.9</div>
         <div class="footer-copy" id="footerCopy">© 2026 Budget 2026</div>
     </footer>
     </div>
@@ -1789,7 +1789,12 @@ async function loadSettings() {
 
     if(activeRow) {
       // Apply budgets & targets from month row (or base if no month row)
-      const catBudgets = activeRow.category_budgets || {};
+      const rawBudgets = activeRow.category_budgets || {};
+      // Strip orphan cat ids (deleted cats whose budgets linger in DB)
+      const validCatIds = new Set(CATS.map(c => c.id));
+      const catBudgets = Object.fromEntries(
+        Object.entries(rawBudgets).filter(([id]) => validCatIds.has(id))
+      );
       userSettings = {
         income_target:    parseFloat(activeRow.income_target)  || 6700,
         expense_budget:   parseFloat(activeRow.expense_budget) || 4428,
@@ -1972,7 +1977,9 @@ async function loadSettingsForMonth(mk) {
     const activeRow = monthRow || baseRow;
 
     if(activeRow) {
-      const catBudgets = activeRow.category_budgets || {};
+      const rawBudgets2 = activeRow.category_budgets || {};
+      const validIds2 = new Set(CATS.map(c => c.id));
+      const catBudgets = Object.fromEntries(Object.entries(rawBudgets2).filter(([id]) => validIds2.has(id)));
       INCOME_TARGET  = parseFloat(activeRow.income_target)  || 6700;
       BUDGET_TOTAL   = parseFloat(activeRow.expense_budget) || 4428;
       SAVINGS_TARGET = parseFloat(activeRow.savings_target) || 2272;
@@ -2187,7 +2194,27 @@ function deleteCat(catId, groupId) {
   const row = document.getElementById('cat-row-'+catId);
   if(row) row.remove();
   updateGroupTotal(groupId);
+  updateSettingsTotal();
+  // Immediately purge orphan from all settings rows in DB
+  purgeOrphanCatFromDB(catId);
   toast(t.catDeleted, 'delete');
+}
+
+async function purgeOrphanCatFromDB(catId) {
+  if(!currentUser) return;
+  try {
+    const { data: rows, error } = await supa.from('settings').select('*').eq('user_id', currentUser.id);
+    if(error || !rows) return;
+    for(const row of rows) {
+      const budgets = row.category_budgets || {};
+      if(catId in budgets) {
+        delete budgets[catId];
+        await supa.from('settings').update({ category_budgets: budgets })
+          .eq('user_id', currentUser.id)
+          .eq('month_key', row.month_key ?? '');
+      }
+    }
+  } catch(e) { console.warn('purgeOrphanCatFromDB failed', e); }
 }
 
 function deleteGroup(groupId) {
@@ -2380,7 +2407,7 @@ function applyI18n() {
   const fv = document.getElementById('footerVersion');
   const fc = document.getElementById('footerCopy');
   const d  = LANG==='fr' ? '01 Mar 2026' : 'Mar 01, 2026';
-  if(fv) fv.textContent = 'v1.260301.8 · ' + t.updatedOn + ' ' + d;
+  if(fv) fv.textContent = 'v1.260301.9 · ' + t.updatedOn + ' ' + d;
   if(fc) fc.textContent = '© 2026 Budget 2026 · ' + t.allRights;
   // Set topbar title to current view
   const ttEl = document.getElementById('topbarTitle');
