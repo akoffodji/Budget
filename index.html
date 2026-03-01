@@ -1153,7 +1153,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       </div>
 
     <footer class="app-footer">
-        <div class="footer-version" id="footerVersion">v1.260301.10</div>
+        <div class="footer-version" id="footerVersion">v1.260301.12</div>
         <div class="footer-copy" id="footerCopy">© 2026 Budget 2026</div>
     </footer>
     </div>
@@ -1753,79 +1753,66 @@ function currentMonthKey() {
 async function loadSettings() {
   if(!currentUser) return;
   try {
-    // Load ALL settings rows for this user at once (base + months)
     const { data: rows, error } = await supa
-      .from('settings')
-      .select('*')
-      .eq('user_id', currentUser.id);
+      .from('settings').select('*').eq('user_id', currentUser.id);
     if(error) throw error;
 
-    const baseRow  = (rows||[]).find(r => r.month_key === '' || r.month_key === null || !r.month_key);
+    const baseRow  = (rows||[]).find(r => !r.month_key || r.month_key === '');
     const monthRow = (rows||[]).find(r => r.month_key === currentMonthKey());
-    // Always start from base budgets, then override with month row if exists
     const activeRow = monthRow || baseRow;
-    // Reset CATS to base budgets first (so navigating away from override month restores base)
-    if(baseRow && baseRow.category_budgets) {
-      const baseBudgets = baseRow.category_budgets;
-      const validCatIds0 = new Set(CATS.map(c => c.id));
-      CATS.forEach(c => {
-        if(baseBudgets[c.id] !== undefined && validCatIds0.has(c.id))
-          c.budget = parseFloat(baseBudgets[c.id]);
-      });
-      INCOME_TARGET = parseFloat(baseRow.income_target) || 6700;
-      recomputeTotals(); // derive from cats, not stored values
+
+    if(!activeRow) {
+      // Brand new user — regional defaults
+      const regional = await detectRegionDefaults();
+      INCOME_TARGET = regional.income;
+      CATS.forEach(c => { if(regional.cats[c.id] !== undefined) c.budget = regional.cats[c.id]; });
+      recomputeTotals();
+      userSettings = { income_target:INCOME_TARGET, expense_budget:BUDGET_TOTAL,
+        savings_target:SAVINGS_TARGET, category_budgets:regional.cats, has_month_override:false };
+      console.log('Regional defaults applied');
+      return;
     }
 
+    // ── STEP 1: restore structure from base (names, custom cats/groups) ───────
     if(baseRow) {
-      // Restore structure (cats/groups/names) from base row
       const catNames = baseRow.category_names || {};
       CATS.forEach(c => { if(catNames[c.id]) c.name = catNames[c.id]; });
       const groupNames = baseRow.group_names || {};
       GROUPS.forEach(g => { if(groupNames[g.id]) g.label = groupNames[g.id]; });
       if(baseRow.custom_cats) {
-        try { JSON.parse(baseRow.custom_cats).forEach(c => { if(!CATS.find(x=>x.id===c.id)) CATS.push(c); }); } catch(e) {}
+        try { JSON.parse(baseRow.custom_cats).forEach(c => {
+          if(!CATS.find(x=>x.id===c.id)) CATS.push(c);
+        }); } catch(e) {}
       }
       if(baseRow.custom_groups) {
-        try { JSON.parse(baseRow.custom_groups).forEach(g => { if(!GROUPS.find(x=>x.id===g.id)) GROUPS.push(g); }); } catch(e) {}
+        try { JSON.parse(baseRow.custom_groups).forEach(g => {
+          if(!GROUPS.find(x=>x.id===g.id)) GROUPS.push(g);
+        }); } catch(e) {}
       }
     }
 
-    if(activeRow) {
-      // Apply budgets & targets from month row (or base if no month row)
-      const rawBudgets = activeRow.category_budgets || {};
-      // Strip orphan cat ids (deleted cats whose budgets linger in DB)
-      const validCatIds = new Set(CATS.map(c => c.id));
-      const catBudgets = Object.fromEntries(
-        Object.entries(rawBudgets).filter(([id]) => validCatIds.has(id))
-      );
-      userSettings = {
-        income_target:    parseFloat(activeRow.income_target)  || 6700,
-        expense_budget:   parseFloat(activeRow.expense_budget) || 4428,
-        savings_target:   parseFloat(activeRow.savings_target) || 2272,
-        category_budgets: catBudgets,
-        has_month_override: !!monthRow
-      };
-      CATS.forEach(c => {
-        if(catBudgets[c.id] !== undefined) c.budget = parseFloat(catBudgets[c.id]);
-      });
-      INCOME_TARGET = userSettings.income_target;
-      // Always recompute from cats — never trust stored expense_budget/savings_target
-      recomputeTotals();
-      userSettings.expense_budget = BUDGET_TOTAL;
-      userSettings.savings_target = SAVINGS_TARGET;
-    } else {
-      // Brand new user — apply regional defaults
-      const regional = await detectRegionDefaults();
-      INCOME_TARGET  = regional.income;
-      BUDGET_TOTAL   = Object.values(regional.cats).reduce((s,v)=>s+v, 0);
-      SAVINGS_TARGET = INCOME_TARGET - BUDGET_TOTAL;
-      CATS.forEach(c => { if(regional.cats[c.id] !== undefined) c.budget = regional.cats[c.id]; });
-      userSettings = {
-        income_target: INCOME_TARGET, expense_budget: BUDGET_TOTAL,
-        savings_target: SAVINGS_TARGET, category_budgets: regional.cats, has_month_override: false
-      };
-      console.log('Regional defaults applied for new user');
-    }
+    // ── STEP 2: apply budgets from activeRow (now CATS is fully populated) ────
+    const rawBudgets = activeRow.category_budgets || {};
+    const validIds   = new Set(CATS.map(c => c.id));
+    // Only apply budgets for cats that actually exist
+    CATS.forEach(c => {
+      if(rawBudgets[c.id] !== undefined && validIds.has(c.id))
+        c.budget = parseFloat(rawBudgets[c.id]) || 0;
+    });
+    INCOME_TARGET = parseFloat(activeRow.income_target) || 6700;
+
+    // ── STEP 3: ALWAYS recompute — never use stored expense_budget/savings_target
+    recomputeTotals();
+
+    userSettings = {
+      income_target:    INCOME_TARGET,
+      expense_budget:   BUDGET_TOTAL,   // computed
+      savings_target:   SAVINGS_TARGET, // computed
+      category_budgets: Object.fromEntries(CATS.map(c=>[c.id, c.budget])),
+      has_month_override: !!monthRow
+    };
+
+    console.log(`loadSettings: income=${INCOME_TARGET} budget=${BUDGET_TOTAL} savings=${SAVINGS_TARGET} (month=${currentMonthKey()}, override=${!!monthRow})`);
   } catch(e) {
     console.error('Settings load failed:', e);
   }
@@ -1839,11 +1826,11 @@ function recomputeTotals() {
 
 // ── FLUSH DOM → MEMORY (sync inputs → CATS/GROUPS arrays) ───────────────────
 function flushDOMToMemory() {
-  // Sync income target from DOM
+  // 1. Income target from DOM
   const si = document.getElementById('s-income');
   if(si) INCOME_TARGET = parseFloat(si.value) || INCOME_TARGET;
 
-  // Sync per-category name + budget from DOM
+  // 2. Per-category name + budget from DOM
   CATS.forEach(c => {
     const nameEl   = document.getElementById('s-cat-name-'   + c.id);
     const budgetEl = document.getElementById('s-cat-budget-' + c.id);
@@ -1851,25 +1838,10 @@ function flushDOMToMemory() {
     if(budgetEl) c.budget = parseFloat(budgetEl.value) || 0;
   });
 
-  // Always recompute BUDGET_TOTAL and SAVINGS_TARGET from cats
+  // 3. ALWAYS recompute from cats — never read readonly s-expense / s-savings
   recomputeTotals();
 
-  // Sync group names
-  const si2 = si; // already done
-  const se = document.getElementById('s-expense');
-  const ss = document.getElementById('s-savings');
-  if(se) BUDGET_TOTAL   = parseFloat(se.value) || 0;
-  if(ss) SAVINGS_TARGET = parseFloat(ss.value) || 0;
-
-  // Per-category name + budget
-  CATS.forEach(c => {
-    const nameEl   = document.getElementById('s-cat-name-'   + c.id);
-    const budgetEl = document.getElementById('s-cat-budget-' + c.id);
-    if(nameEl)   c.name   = nameEl.value.trim()        || c.name;
-    if(budgetEl) c.budget = parseFloat(budgetEl.value) || 0;
-  });
-
-  // Per-group name
+  // 4. Per-group name
   GROUPS.forEach(g => {
     const el = document.getElementById('s-group-name-' + g.id);
     if(el) g.label = el.value.trim() || g.label;
@@ -2428,7 +2400,7 @@ function applyI18n() {
   const fv = document.getElementById('footerVersion');
   const fc = document.getElementById('footerCopy');
   const d  = LANG==='fr' ? '01 Mar 2026' : 'Mar 01, 2026';
-  if(fv) fv.textContent = 'v1.260301.10 · ' + t.updatedOn + ' ' + d;
+  if(fv) fv.textContent = 'v1.260301.12 · ' + t.updatedOn + ' ' + d;
   if(fc) fc.textContent = '© 2026 Budget 2026 · ' + t.allRights;
   // Set topbar title to current view
   const ttEl = document.getElementById('topbarTitle');
@@ -2671,6 +2643,7 @@ function toggleGroup(id){
 }
 
 function renderOverview(){
+  recomputeTotals(); // ensure BUDGET_TOTAL/SAVINGS_TARGET are fresh before rendering
   const mo=thisMo();
   const income =mo.filter(t=>t.type==='income' ).reduce((s,t)=>s+t.amount,0);
   const expense=mo.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
