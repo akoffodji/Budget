@@ -381,40 +381,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 .hist-table { background:var(--bg2); border-radius:var(--radius-xl); overflow:hidden; box-shadow:var(--shadow-sm); }
 .hist-thead { display:grid; grid-template-columns:80px 1fr 140px 110px 36px; padding:10px 16px; background:var(--fill4); border-bottom:1px solid var(--sep2); font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--label3); }
 
-/* ── SWIPE TO DELETE ── */
-.hist-row-wrap {
-  position: relative; overflow: hidden;
-  border-bottom: 1px solid var(--sep2);
-}
-.hist-row-wrap:last-child { border-bottom: none; }
-.hist-row-wrap .hist-row {
-  border-bottom: none;
-  transform: translateX(0);
-  transition: transform .25s cubic-bezier(.4,0,.2,1);
-  position: relative; z-index: 1; background: var(--bg2);
-  will-change: transform;
-}
-.hist-row-wrap .hist-row:hover { background: var(--fill4); }
-/* Delete reveal behind the row */
-.hist-swipe-action {
-  position: absolute; right: 0; top: 0; bottom: 0;
-  width: 80px; background: var(--red);
-  display: flex; align-items: center; justify-content: center;
-  flex-direction: column; gap: 4px; color: #fff;
-  font-size: 11px; font-weight: 700;
-  border-radius: 0;
-}
-.hist-swipe-action .mi { font-size: 22px; }
-/* Confirmed delete — flash red */
-.hist-row-wrap.deleting .hist-row {
-  transform: translateX(100%) !important;
-  opacity: 0;
-  transition: transform .3s ease, opacity .2s ease;
-}
-.hist-row-wrap.deleting {
-  max-height: 0 !important; overflow: hidden;
-  transition: max-height .35s ease .25s;
-}
+/* swipe removed */
 
 .hist-row { display:grid; grid-template-columns:80px 1fr 140px 110px 36px; padding:12px 16px; align-items:center; font-size:13px; transition:background .1s, transform .25s cubic-bezier(.4,0,.2,1); }
 
@@ -1329,8 +1296,8 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
 .summary-card,.budget-bar-card,.cat-card,.tx-card,.hist-table { animation:fadeUp .3s ease both; }
 
 @media(max-width:600px){ 
-  .hist-thead,.hist-row{grid-template-columns:65px 1fr 90px 28px} 
-  .hist-cat{display:none}
+  .hist-thead,.hist-row{grid-template-columns:65px 1fr 90px 28px}
+  .hist-cat,.hist-thead-cat{display:none}
   .md-row{grid-template-columns:1fr}
 }
 </style>
@@ -1733,7 +1700,7 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
               <button class="seg-btn" onclick="filterHist('expense',this)" data-i18n="expenses"></button>
             </div>
             <div class="hist-table">
-              <div class="hist-thead"><div data-i18n="colDate"></div><div data-i18n="colDesc"></div><div data-i18n="colCat"></div><div data-i18n="colAmt"></div><div></div></div>
+              <div class="hist-thead"><div data-i18n="colDate"></div><div data-i18n="colDesc"></div><div class="hist-thead-cat" data-i18n="colCat"></div><div data-i18n="colAmt"></div><div></div></div>
               <div id="histBody"></div>
             </div>
           </div>
@@ -1850,7 +1817,7 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
       </div>
 
     <footer class="app-footer">
-        <div class="footer-version" id="footerVersion">v1.260301.45</div>
+        <div class="footer-version" id="footerVersion">v1.260301.47</div>
         <div class="footer-copy" id="footerCopy">© 2026 Budget 2026</div>
     </footer>
     </div>
@@ -4355,60 +4322,7 @@ function highlightMatch(str, query) {
 }
 
 
-// ── SWIPE TO DELETE ────────────────────────────────────────────────────────────
-const _swipe = { startX:0, startY:0, el:null, dragging:false, locked:false };
-const SWIPE_THRESHOLD  = 72;  // px to trigger delete
-const SWIPE_MAX        = 80;  // max reveal
-
-function swipeStart(e, el) {
-  const t = e.touches[0];
-  _swipe.startX   = t.clientX;
-  _swipe.startY   = t.clientY;
-  _swipe.el       = el;
-  _swipe.dragging = false;
-  _swipe.locked   = false;
-}
-
-function swipeMove(e, el) {
-  if(_swipe.locked) return;
-  const t    = e.touches[0];
-  const dx   = _swipe.startX - t.clientX;  // positive = swipe left
-  const dy   = Math.abs(t.clientY - _swipe.startY);
-
-  // If more vertical than horizontal, ignore (scroll)
-  if(!_swipe.dragging && dy > 8) { _swipe.locked = true; return; }
-  if(!_swipe.dragging && Math.abs(dx) > 6) _swipe.dragging = true;
-  if(!_swipe.dragging) return;
-
-  e.preventDefault(); // block scroll while swiping
-  const offset = Math.max(0, Math.min(dx, SWIPE_MAX));
-  el.style.transition = 'none';
-  el.style.transform  = `translateX(-${offset}px)`;
-}
-
-function swipeEnd(e, el) {
-  if(_swipe.locked || !_swipe.dragging) { return; }
-  const dx = _swipe.startX - e.changedTouches[0].clientX;
-  el.style.transition = '';
-
-  if(dx >= SWIPE_THRESHOLD) {
-    // Trigger delete
-    const id   = el.dataset.id;
-    const wrap = document.getElementById('wrap-' + id);
-    if(wrap) {
-      const h = wrap.offsetHeight;
-      wrap.style.maxHeight = h + 'px';
-      wrap.classList.add('deleting');
-      setTimeout(() => {
-        deleteTx(id);
-      }, 500);
-    }
-  } else {
-    // Snap back
-    el.style.transform = 'translateX(0)';
-  }
-  _swipe.dragging = false;
-}
+// swipe removed
 
 
 // ── PDF RAPPORT MENSUEL ───────────────────────────────────────────────────────
@@ -4510,6 +4424,111 @@ async function exportPDF() {
   doc.setFillColor(...barCol);
   doc.roundedRect(M, y, barW * pct, 5, 2, 2, 'F');
   y += 12;
+
+  // ── 6-month trend chart (drawn with lines) ──────────────────────────────────
+  if(y > 210) { doc.addPage(); y = 14; }
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...DARK);
+  doc.text(LANG==='fr' ? 'Tendance 6 mois' : '6-month trend', M, y);
+  y += 5;
+
+  const CHART_W = 182;
+  const CHART_H = 45;
+  const CHART_X = M;
+  const CHART_Y = y;
+
+  // Background
+  doc.setFillColor(...LIGHT);
+  doc.roundedRect(CHART_X, CHART_Y, CHART_W, CHART_H, 2, 2, 'F');
+
+  // Build 6 months of data
+  const chartMonths = [];
+  const nowC = new Date();
+  const msNames = LANG==='fr'
+    ? ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']
+    : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  for(let i = 5; i >= 0; i--) {
+    const d  = new Date(nowC.getFullYear(), nowC.getMonth() - i, 1);
+    const mk = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const moTxs  = txs.filter(t => t.date.startsWith(mk));
+    const inc = moTxs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+    const exp = moTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+    chartMonths.push({ label: msNames[d.getMonth()], income: inc, expense: exp, savings: inc - exp });
+  }
+
+  const allVals = chartMonths.flatMap(m => [m.income, m.expense, Math.max(m.savings,0)]);
+  const maxVal  = Math.max(...allVals, 1);
+  const PAD_L = 8, PAD_R = 6, PAD_T = 4, PAD_B = 12;
+  const cW = CHART_W - PAD_L - PAD_R;
+  const cH = CHART_H - PAD_T - PAD_B;
+  const step = cW / (chartMonths.length - 1);
+
+  const xOf = i => CHART_X + PAD_L + i * step;
+  const yOf = v => CHART_Y + PAD_T + cH - (v / maxVal) * cH;
+
+  // Grid lines
+  doc.setDrawColor(210, 210, 218);
+  doc.setLineWidth(0.2);
+  for(let g = 0; g <= 3; g++) {
+    const gy = yOf(maxVal * g / 3);
+    doc.line(CHART_X + PAD_L, gy, CHART_X + PAD_L + cW, gy);
+  }
+
+  // Draw lines for each series
+  const series = [
+    { key: 'income',  color: GREEN },
+    { key: 'expense', color: RED   },
+    { key: 'savings', color: BLUE  },
+  ];
+
+  series.forEach(s => {
+    doc.setDrawColor(...s.color);
+    doc.setLineWidth(0.8);
+    chartMonths.forEach((m, i) => {
+      if(i === 0) return;
+      const x1 = xOf(i-1), y1 = yOf(Math.max(chartMonths[i-1][s.key], 0));
+      const x2 = xOf(i),   y2 = yOf(Math.max(m[s.key], 0));
+      doc.line(x1, y1, x2, y2);
+    });
+    // Dots
+    doc.setFillColor(...s.color);
+    chartMonths.forEach((m, i) => {
+      doc.circle(xOf(i), yOf(Math.max(m[s.key], 0)), 0.9, 'F');
+    });
+  });
+
+  // X axis labels
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...GREY);
+  chartMonths.forEach((m, i) => {
+    const isCur = i === chartMonths.length - 1;
+    if(isCur) { doc.setFont('helvetica', 'bold'); doc.setTextColor(...BLUE); }
+    doc.text(m.label, xOf(i), CHART_Y + CHART_H - 2, { align: 'center' });
+    if(isCur) { doc.setFont('helvetica', 'normal'); doc.setTextColor(...GREY); }
+  });
+
+  // Legend
+  const legY = CHART_Y + CHART_H + 5;
+  const legItems = [
+    { label: LANG==='fr'?'Revenus':'Income',   color: GREEN },
+    { label: LANG==='fr'?'Dépenses':'Expenses', color: RED  },
+    { label: LANG==='fr'?'Épargne':'Savings',   color: BLUE },
+  ];
+  let legX = M;
+  legItems.forEach(l => {
+    doc.setFillColor(...l.color);
+    doc.roundedRect(legX, legY - 2.5, 6, 3, 1, 1, 'F');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...GREY);
+    doc.text(l.label, legX + 8, legY);
+    legX += 40;
+  });
+
+  y = legY + 8;
 
   // ── Expenses by category table ───────────────────────────────────────────────
   const expTxs = mo.filter(t => t.type==='expense');
@@ -4783,7 +4802,7 @@ function applyI18n() {
   const fv = document.getElementById('footerVersion');
   const fc = document.getElementById('footerCopy');
   const d  = LANG==='fr' ? '01 Mar 2026' : 'Mar 01, 2026';
-  if(fv) fv.textContent = 'v1.260301.45 · ' + t.updatedOn + ' ' + d;
+  if(fv) fv.textContent = 'v1.260301.47 · ' + t.updatedOn + ' ' + d;
   if(fc) fc.textContent = '© 2026 Budget 2026 · ' + t.allRights;
   // Set topbar title to current view
   const ttEl = document.getElementById('topbarTitle');
