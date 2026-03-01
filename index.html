@@ -1153,7 +1153,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       </div>
 
     <footer class="app-footer">
-        <div class="footer-version" id="footerVersion">v1.260301.13</div>
+        <div class="footer-version" id="footerVersion">v1.260301.14</div>
         <div class="footer-copy" id="footerCopy">© 2026 Budget 2026</div>
     </footer>
     </div>
@@ -1167,7 +1167,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
     <div class="edit-tx-handle"></div>
     <div class="edit-tx-header">
       <div class="edit-tx-title" id="editTxTitle">Modifier</div>
-      <button class="modal-close" onclick="closeEditTx()"><span class="mi">close</span></button>
+      <button class="modal-close" onclick="closeEditTxDirect()"><span class="mi">close</span></button>
     </div>
     <div class="edit-tx-body">
       <!-- Type toggle -->
@@ -2402,7 +2402,7 @@ function applyI18n() {
   const fv = document.getElementById('footerVersion');
   const fc = document.getElementById('footerCopy');
   const d  = LANG==='fr' ? '01 Mar 2026' : 'Mar 01, 2026';
-  if(fv) fv.textContent = 'v1.260301.13 · ' + t.updatedOn + ' ' + d;
+  if(fv) fv.textContent = 'v1.260301.14 · ' + t.updatedOn + ' ' + d;
   if(fc) fc.textContent = '© 2026 Budget 2026 · ' + t.allRights;
   // Set topbar title to current view
   const ttEl = document.getElementById('topbarTitle');
@@ -2591,38 +2591,58 @@ function editPickType(type, rebuildCats=true) {
 }
 
 function closeEditTx(e) {
+  // Called directly (no event) OR via overlay click (must be on overlay itself)
   if(e && e.target !== document.getElementById('editTxOverlay')) return;
   document.getElementById('editTxOverlay').classList.remove('open');
   _editId = null;
 }
 
+function closeEditTxDirect() {
+  // Called by close button — always close regardless of event
+  document.getElementById('editTxOverlay').classList.remove('open');
+  _editId = null;
+}
+
 async function saveEditTx() {
-  if(!_editId) return;
+  const editId = _editId; // snapshot before any async
+  if(!editId) return;
+
   const amount = parseFloat(document.getElementById('edit-amount').value);
   const desc   = document.getElementById('edit-desc').value.trim();
   const cat    = document.getElementById('edit-cat').value;
   const date   = document.getElementById('edit-date').value;
 
-  if(!amount || amount <= 0) { toast(t.validAmount, 'warning'); return; }
-  if(!desc)   { toast(t.validDesc,   'warning'); return; }
-  if(!date)   { toast(t.validDate,   'warning'); return; }
+  if(!amount || amount <= 0) { toast(t.validAmount || 'Montant invalide', 'warning'); return; }
+  if(!desc)   { toast(t.validDesc   || 'Description requise', 'warning'); return; }
+  if(!date)   { toast(t.validDate   || 'Date requise', 'warning'); return; }
+  if(!cat)    { toast(t.validCat    || 'Catégorie requise', 'warning'); return; }
 
-  const idx = txs.findIndex(x => x.id === _editId);
-  if(idx === -1) return;
+  // Disable save button during async
+  const saveBtn = document.querySelector('.edit-save-btn');
+  if(saveBtn) saveBtn.disabled = true;
 
-  txs[idx] = { ...txs[idx], type:_editType, amount, desc, date, cat };
+  const idx = txs.findIndex(x => x.id === editId);
+  if(idx > -1) txs[idx] = { ...txs[idx], type:_editType, amount, desc, date, cat };
 
   try {
     const { error } = await supa.from('transactions').upsert({
-      id: _editId, type: _editType, amount, description: desc,
-      date, category: cat, user_id: currentUser.id
+      id: editId, type: _editType, amount,
+      description: desc, date, category: cat,
+      user_id: currentUser.id
     });
     if(error) throw error;
-  } catch(e) { console.warn('Edit save failed', e); }
 
-  document.getElementById('editTxOverlay').classList.remove('open');
-  renderOverview(); renderHistory();
-  toast(t.txUpdated || (LANG==='fr'?'Transaction modifiée':'Transaction updated'), 'check_circle');
+    // Close only on success
+    document.getElementById('editTxOverlay').classList.remove('open');
+    _editId = null;
+    renderOverview(); renderHistory();
+    toast(t.txUpdated || (LANG==='fr'?'Transaction modifiée':'Transaction updated'), 'check_circle');
+  } catch(e) {
+    console.error('Edit save failed:', e);
+    toast((LANG==='fr'?'Erreur de sauvegarde: ':'Save error: ') + (e.message||''), 'error');
+  } finally {
+    if(saveBtn) saveBtn.disabled = false;
+  }
 }
 
 function confirmDeleteTx() {
