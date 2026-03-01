@@ -662,6 +662,77 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 }
 .theme-switch.on::after { transform: translateX(18px); }
 
+
+/* ── EDIT TRANSACTION MODAL ── */
+.edit-tx-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  z-index: 2000; display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .25s;
+}
+.edit-tx-overlay.open { opacity: 1; pointer-events: all; }
+.edit-tx-sheet {
+  background: var(--bg2); border-radius: 24px 24px 0 0;
+  width: 100%; max-width: 600px;
+  padding: 0 0 calc(16px + env(safe-area-inset-bottom,0px));
+  box-shadow: var(--shadow-lg);
+  transform: translateY(100%); transition: transform .3s cubic-bezier(.4,0,.2,1);
+  max-height: 90vh; overflow-y: auto;
+}
+.edit-tx-overlay.open .edit-tx-sheet { transform: translateY(0); }
+.edit-tx-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--sep); margin: 12px auto 0; 
+}
+.edit-tx-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px 12px; border-bottom: 1px solid var(--sep2);
+}
+.edit-tx-title { font-size: 16px; font-weight: 700; }
+.edit-tx-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.edit-type-toggle {
+  display: flex; background: var(--fill3); border-radius: 100px;
+  padding: 3px; gap: 2px;
+}
+.edit-type-btn {
+  flex: 1; padding: 8px; border: none; border-radius: 100px;
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center;
+  justify-content: center; gap: 6px; transition: background .2s, color .2s;
+  background: none; color: var(--label3);
+}
+.edit-type-btn.income.active  { background: var(--green);  color: #fff; }
+.edit-type-btn.expense.active { background: var(--red);    color: #fff; }
+.edit-field { display: flex; flex-direction: column; gap: 6px; }
+.edit-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--label3); }
+.edit-input {
+  padding: 12px 14px; background: var(--fill3); border: 1.5px solid transparent;
+  border-radius: var(--radius); color: var(--label); font-family: inherit;
+  font-size: 15px; outline: none; width: 100%;
+  transition: border-color .2s, background .15s;
+}
+.edit-input:focus { border-color: var(--blue); background: var(--bg2); }
+.edit-input.amount-input { font-size: 24px; font-weight: 700; }
+.edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.edit-tx-footer {
+  display: flex; gap: 10px; padding: 0 20px;
+}
+.edit-save-btn {
+  flex: 1; padding: 14px; border: none; border-radius: var(--radius-lg);
+  background: var(--blue); color: #fff; font-family: inherit;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 3px 10px rgba(26,115,232,.3); transition: opacity .15s;
+}
+.edit-save-btn:hover { opacity: .9; }
+.edit-del-btn-lg {
+  padding: 14px 18px; border: none; border-radius: var(--radius-lg);
+  background: var(--red-light); color: var(--red);
+  font-family: inherit; font-size: 15px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  transition: background .15s;
+}
+.edit-del-btn-lg:hover { background: var(--red); color: #fff; }
+
 @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 .summary-card,.budget-bar-card,.cat-card,.tx-card,.hist-table { animation:fadeUp .3s ease both; }
 
@@ -995,6 +1066,57 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 </div>
 <div class="toast" id="toast"></div>
 
+<!-- EDIT TRANSACTION BOTTOM SHEET -->
+<div class="edit-tx-overlay" id="editTxOverlay" onclick="closeEditTx(event)">
+  <div class="edit-tx-sheet" id="editTxSheet">
+    <div class="edit-tx-handle"></div>
+    <div class="edit-tx-header">
+      <div class="edit-tx-title" id="editTxTitle">Modifier</div>
+      <button class="modal-close" onclick="closeEditTx()"><span class="mi">close</span></button>
+    </div>
+    <div class="edit-tx-body">
+      <!-- Type toggle -->
+      <div class="edit-type-toggle">
+        <button class="edit-type-btn income" id="edit-pick-income" onclick="editPickType('income')">
+          <span class="mi mi-sm">arrow_upward</span> <span id="editIncomeLabel">Revenu</span>
+        </button>
+        <button class="edit-type-btn expense" id="edit-pick-expense" onclick="editPickType('expense')">
+          <span class="mi mi-sm">arrow_downward</span> <span id="editExpenseLabel">Dépense</span>
+        </button>
+      </div>
+      <!-- Amount -->
+      <div class="edit-field">
+        <div class="edit-label" id="editAmountLabel">Montant</div>
+        <input class="edit-input amount-input" id="edit-amount" type="number" min="0" step="0.01">
+      </div>
+      <!-- Description -->
+      <div class="edit-field">
+        <div class="edit-label" id="editDescLabel">Description</div>
+        <input class="edit-input" id="edit-desc" type="text">
+      </div>
+      <!-- Category + Date -->
+      <div class="edit-row">
+        <div class="edit-field">
+          <div class="edit-label" id="editCatLabel">Catégorie</div>
+          <select class="edit-input" id="edit-cat"></select>
+        </div>
+        <div class="edit-field">
+          <div class="edit-label" id="editDateLabel">Date</div>
+          <input class="edit-input" id="edit-date" type="date">
+        </div>
+      </div>
+    </div>
+    <div class="edit-tx-footer">
+      <button class="edit-del-btn-lg" onclick="confirmDeleteTx()">
+        <span class="mi mi-sm">delete</span>
+      </button>
+      <button class="edit-save-btn" onclick="saveEditTx()">
+        <span class="mi mi-sm">check</span> <span id="editSaveLabel">Enregistrer</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ADD CATEGORY MODAL -->
 <div class="modal-overlay" id="addCatModal">
   <div class="modal-card">
@@ -1082,7 +1204,7 @@ const I18N = {
     cancel:"Annuler", confirm:"Ajouter", create:"Créer",
     txSaved:"enregistré", txDeleted:"Transaction supprimée",
     catAdded:"ajoutée", groupCreated:"créé",
-    catDeleted:"Catégorie supprimée", groupDeleted:"Groupe supprimé",
+    catDeleted:"Catégorie supprimée", groupDeleted:"Groupe supprimé", txUpdated:"Transaction modifiée", editTx:"Modifier",
     saveError:"Erreur de sauvegarde", connectFirst:"Connectez-vous d'abord",
     validAmount:"Entrez un montant valide", validDesc:"Entrez une description", validDate:"Choisissez une date",
     loading:"Chargement des données…",
@@ -1121,7 +1243,7 @@ const I18N = {
     cancel:"Cancel", confirm:"Add", create:"Create",
     txSaved:"saved", txDeleted:"Transaction deleted",
     catAdded:"added", groupCreated:"created",
-    catDeleted:"Category deleted", groupDeleted:"Group deleted",
+    catDeleted:"Category deleted", groupDeleted:"Group deleted", txUpdated:"Transaction updated", editTx:"Edit",
     saveError:"Save error", connectFirst:"Please sign in first",
     validAmount:"Enter a valid amount", validDesc:"Enter a description", validDate:"Choose a date",
     loading:"Loading data…",
@@ -1858,7 +1980,99 @@ function addTx(){
   showView('overview');
 }
 
-function deleteTx(id){ txs=txs.filter(t=>t.id!==id); deleteTxRemote(id); renderOverview(); renderHistory(); toast(t.txDeleted,'delete'); }
+function deleteTx(id){ txs=txs.filter(x=>x.id!==id); deleteTxRemote(id); renderOverview(); renderHistory(); toast(t.txDeleted,'delete'); }
+
+// ── EDIT TRANSACTION ──────────────────────────────────────────────────────────
+let _editId = null;
+let _editType = 'expense';
+
+function openEditTx(id) {
+  const tx = txs.find(x => x.id === id);
+  if(!tx) return;
+  _editId   = id;
+  _editType = tx.type;
+
+  // Fill labels with i18n
+  document.getElementById('editTxTitle').textContent     = t.editTx || (LANG==='fr'?'Modifier':'Edit');
+  document.getElementById('editAmountLabel').textContent  = t.amount;
+  document.getElementById('editDescLabel').textContent    = t.description;
+  document.getElementById('editCatLabel').textContent     = t.category;
+  document.getElementById('editDateLabel').textContent    = t.date;
+  document.getElementById('editIncomeLabel').textContent  = t.typeIncome;
+  document.getElementById('editExpenseLabel').textContent = t.typeExpense;
+  document.getElementById('editSaveLabel').textContent    = t.save;
+
+  // Fill values
+  document.getElementById('edit-amount').value = tx.amount;
+  document.getElementById('edit-desc').value   = tx.desc;
+  document.getElementById('edit-date').value   = tx.date;
+
+  // Build category select
+  const sel = document.getElementById('edit-cat');
+  sel.innerHTML = CATS.filter(c => c.type === tx.type)
+    .map(c => `<option value="${c.id}" ${c.id===tx.cat?'selected':''}>${c.name}</option>`)
+    .join('');
+
+  // Set type buttons
+  editPickType(tx.type, false);
+
+  // Show sheet
+  document.getElementById('editTxOverlay').classList.add('open');
+}
+
+function editPickType(type, rebuildCats=true) {
+  _editType = type;
+  document.getElementById('edit-pick-income').classList.toggle('active',  type==='income');
+  document.getElementById('edit-pick-expense').classList.toggle('active', type==='expense');
+  if(rebuildCats) {
+    const sel = document.getElementById('edit-cat');
+    sel.innerHTML = CATS.filter(c => c.type === type)
+      .map(c => `<option value="${c.id}">${c.name}</option>`)
+      .join('');
+  }
+}
+
+function closeEditTx(e) {
+  if(e && e.target !== document.getElementById('editTxOverlay')) return;
+  document.getElementById('editTxOverlay').classList.remove('open');
+  _editId = null;
+}
+
+async function saveEditTx() {
+  if(!_editId) return;
+  const amount = parseFloat(document.getElementById('edit-amount').value);
+  const desc   = document.getElementById('edit-desc').value.trim();
+  const cat    = document.getElementById('edit-cat').value;
+  const date   = document.getElementById('edit-date').value;
+
+  if(!amount || amount <= 0) { toast(t.validAmount, 'warning'); return; }
+  if(!desc)   { toast(t.validDesc,   'warning'); return; }
+  if(!date)   { toast(t.validDate,   'warning'); return; }
+
+  const idx = txs.findIndex(x => x.id === _editId);
+  if(idx === -1) return;
+
+  txs[idx] = { ...txs[idx], type:_editType, amount, desc, date, cat };
+
+  try {
+    const { error } = await supa.from('transactions').upsert({
+      id: _editId, type: _editType, amount, description: desc,
+      date, category: cat, user_id: currentUser.id
+    });
+    if(error) throw error;
+  } catch(e) { console.warn('Edit save failed', e); }
+
+  document.getElementById('editTxOverlay').classList.remove('open');
+  renderOverview(); renderHistory();
+  toast(t.txUpdated || (LANG==='fr'?'Transaction modifiée':'Transaction updated'), 'check_circle');
+}
+
+function confirmDeleteTx() {
+  if(!_editId) return;
+  deleteTx(_editId);
+  document.getElementById('editTxOverlay').classList.remove('open');
+  _editId = null;
+}
 
 const collapsedSections=new Set();
 function toggleSection(id){
@@ -1946,7 +2160,7 @@ function renderOverview(){
           <div class="tx-meta">${cat.name} · ${fmtDate(t.date)}</div>
         </div>
         <div class="tx-amt ${t.type}">${t.type==='income'?'+':''}${fmt(t.amount)}</div>
-        <button class="tx-del-btn" onclick="deleteTx('${t.id}')"><span class="mi mi-sm">close</span></button>
+        <button class="tx-del-btn" onclick="event.stopPropagation();openEditTx('${t.id}')" title="Modifier"><span class="mi mi-sm">edit</span></button>
       </div>`;
     }).join('');
   }
@@ -1962,12 +2176,12 @@ function renderHistory(){
   if(!list.length){ el.innerHTML='<div class="empty-tx"><div class="empty-icon"><span class="mi mi-xl">history</span></div><div class="empty-title">Aucune transaction</div></div>'; return; }
   el.innerHTML=list.map(t=>{
     const cat=getCat(t.cat);
-    return `<div class="hist-row">
+    return `<div class="hist-row" onclick="openEditTx('${t.id}')" style="cursor:pointer">
       <div class="hist-date">${fmtDate(t.date)}</div>
       <div class="hist-desc">${t.desc}</div>
       <div class="hist-cat"><span style="width:7px;height:7px;border-radius:50%;background:${cat.color};display:inline-block;flex-shrink:0"></span>${cat.name}</div>
       <div class="hist-amt ${t.type}">${t.type==='income'?'+':''}${fmt(t.amount)}</div>
-      <div><button class="hist-del" onclick="deleteTx('${t.id}')"><span class="mi mi-sm">close</span></button></div>
+      <div><span class="mi mi-sm" style="color:var(--label3);font-size:16px">chevron_right</span></div>
     </div>`;
   }).join('');
 }
