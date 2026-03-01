@@ -946,7 +946,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
                 <div class="settings-row-desc" data-i18n="incomeDesc"></div>
               </div>
               <div class="settings-input-wrap">
-                <input class="settings-input" type="number" id="s-income" min="0" step="100">
+                <input class="settings-input" type="number" id="s-income" min="0" step="100" oninput="updateSettingsTotal()">
                 <span class="settings-input-suffix">$/mois</span>
               </div>
             </div>
@@ -955,9 +955,10 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
               <div class="settings-row-label">
                 <div class="settings-row-name" data-i18n="expenseBudget"></div>
                 <div class="settings-row-desc" data-i18n="expenseDesc"></div>
+                <div style="font-size:10px;color:var(--blue);font-weight:600;margin-top:2px;" data-i18n="autoCalc"></div>
               </div>
               <div class="settings-input-wrap">
-                <input class="settings-input" type="number" id="s-expense" min="0" step="100" oninput="updateSettingsTotal()">
+                <input class="settings-input" type="number" id="s-expense" min="0" step="100" readonly style="opacity:.7;cursor:default;background:var(--fill4);">
                 <span class="settings-input-suffix">$/mois</span>
               </div>
             </div>
@@ -966,9 +967,10 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
               <div class="settings-row-label">
                 <div class="settings-row-name" data-i18n="savingsTarget"></div>
                 <div class="settings-row-desc" data-i18n="savingsDesc"></div>
+                <div style="font-size:10px;color:var(--blue);font-weight:600;margin-top:2px;" data-i18n="autoCalc"></div>
               </div>
               <div class="settings-input-wrap">
-                <input class="settings-input" type="number" id="s-savings" min="0" step="100">
+                <input class="settings-input" type="number" id="s-savings" min="0" step="100" readonly style="opacity:.7;cursor:default;background:var(--fill4);">
                 <span class="settings-input-suffix">$/mois</span>
               </div>
             </div>
@@ -1003,7 +1005,12 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
     <div class="modal-body">
       <div class="modal-field">
         <div class="modal-label" data-i18n="modalName"></div>
-        <input class="modal-input" id="modal-name" type="text" placeholder="ex: Netflix">
+        <div style="display:flex;gap:10px;align-items:center;">
+          <div id="modalIconPreview" style="width:40px;height:40px;border-radius:10px;background:#e8f0fe;color:#1a73e8;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,color .2s;">
+            <span class="mi">label</span>
+          </div>
+          <input class="modal-input" id="modal-name" type="text" placeholder="ex: Netflix" oninput="previewModalIcon(this.value)" style="flex:1;">
+        </div>
       </div>
       <div class="modal-field">
         <div class="modal-label" data-i18n="modalBudget"></div>
@@ -1085,6 +1092,7 @@ const I18N = {
     incomeLabel:"Revenu", expenseLabel:"Dépense",
     perMonth:"$/mois", perMonthShort:"$/m",
     language:"Langue", darkMode:"Mode sombre", lightMode:"Mode clair",
+    autoCalc:"● Calculé automatiquement",
   },
   en: {
     overview:"Overview", add:"Add", history:"History", settings:"Goals",
@@ -1123,6 +1131,7 @@ const I18N = {
     incomeLabel:"Income", expenseLabel:"Expense",
     perMonth:"$/mo", perMonthShort:"$/mo",
     language:"Language", darkMode:"Dark mode", lightMode:"Light mode",
+    autoCalc:"● Auto-calculated",
   }
 };
 let LANG = (()=>{ try{ return localStorage.getItem('budget26_lang')||'auto'; }catch(e){return 'auto';} })();
@@ -1321,13 +1330,15 @@ async function loadSettings() {
 
 // ── FLUSH DOM → MEMORY (sync inputs → CATS/GROUPS arrays) ───────────────────
 function flushDOMToMemory() {
+  // Recalculate before flushing to ensure values are current
+  updateSettingsTotal();
   // Global targets
   const si = document.getElementById('s-income');
   const se = document.getElementById('s-expense');
   const ss = document.getElementById('s-savings');
   if(si) INCOME_TARGET  = parseFloat(si.value) || INCOME_TARGET;
-  if(se) BUDGET_TOTAL   = parseFloat(se.value) || BUDGET_TOTAL;
-  if(ss) SAVINGS_TARGET = parseFloat(ss.value) || SAVINGS_TARGET;
+  if(se) BUDGET_TOTAL   = parseFloat(se.value) || 0;
+  if(ss) SAVINGS_TARGET = parseFloat(ss.value) || 0;
 
   // Per-category name + budget
   CATS.forEach(c => {
@@ -1454,6 +1465,9 @@ function renderSettingsView() {
     container.appendChild(section);
   });
 
+  // Recalculate computed fields after rendering
+  setTimeout(updateSettingsTotal, 50);
+
   // Add group button
   const addGroupBtn = document.createElement('button');
   addGroupBtn.className = 'add-group-btn';
@@ -1475,7 +1489,7 @@ function makeCatRow(c, groupId) {
     <div class="edit-budget-wrap">
       <input class="edit-budget-input" id="s-cat-budget-${c.id}"
         type="number" value="${c.budget}" min="0" step="50"
-        oninput="updateGroupTotal('${groupId}')">
+        oninput="updateGroupTotal('${groupId}'); updateSettingsTotal();">
       <span class="edit-budget-suffix">$/m</span>
     </div>
     <button class="edit-del-btn" onclick="deleteCat('${c.id}','${groupId}')" title="Supprimer">
@@ -1494,7 +1508,28 @@ function updateGroupTotal(groupId) {
   if(el) el.textContent = fmt(total) + ' ' + t.perMonth;
 }
 
-function updateSettingsTotal() {}
+function updateSettingsTotal() {
+  // Sum all category budgets
+  const totalCats = CATS.filter(c => c.type === 'expense').reduce((sum, c) => {
+    const el = document.getElementById('s-cat-budget-' + c.id);
+    return sum + (el ? parseFloat(el.value) || 0 : c.budget);
+  }, 0);
+
+  // Budget dépenses = somme catégories
+  const expEl = document.getElementById('s-expense');
+  if(expEl) expEl.value = totalCats;
+
+  // Épargne = revenus - dépenses
+  const income = parseFloat(document.getElementById('s-income')?.value) || 0;
+  const savEl = document.getElementById('s-savings');
+  if(savEl) {
+    const savings = income - totalCats;
+    savEl.value = savings;
+    // Color feedback
+    savEl.style.color = savings >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+  if(expEl) expEl.style.color = 'var(--label)';
+}
 
 // ── DELETE CAT / GROUP ────────────────────────────────────────────────────────
 function deleteCat(catId, groupId) {
@@ -1534,16 +1569,99 @@ function closeModal() {
   document.getElementById('addCatModal').classList.remove('open');
 }
 
+// ── SMART ICON GUESSER ───────────────────────────────────────────────────────
+function guessIcon(name) {
+  const n = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const rules = [
+    // Housing
+    [['loyer','hypotheque','mortgage','rent','appartement','apartment','condo','maison','house','home','logement'],'home'],
+    [['taxes','tax','impot','gouvernement','government','municipal'],'receipt_long'],
+    [['electricite','electricity','hydro','hydrique','energie','energy','power'],'bolt'],
+    [['chauffage','heating','gaz','gas','propane'],'local_fire_department'],
+    [['eau','water'],'water_drop'],
+    [['internet','wifi','fibre','cable'],'wifi'],
+    [['telephone','phone','mobile','cellulaire','cell','bell','rogers','telus','vidéotron','videotron'],'phone_iphone'],
+    [['menage','nettoyage','cleaning','femme de menage','conciergerie'],'cleaning_services'],
+    [['reparation','renovation','maintenance','entretien','repair','bricolage'],'build'],
+    [['assurance','insurance','protection'],'shield'],
+    [['vie','life'],'favorite'],
+    // Transport
+    [['auto','voiture','car','vehicule','vehicle','pret auto','auto loan'],'directions_car'],
+    [['essence','gas','fuel','carburant','station'],'local_gas_station'],
+    [['entretien auto','car repair','mecanique','mechanic'],'car_repair'],
+    [['transport','transit','bus','metro','subway','sti','stm','rtc'],'directions_bus'],
+    [['stationnement','parking'],'local_parking'],
+    [['uber','taxi','covoiturage','rideshare'],'local_taxi'],
+    [['velo','bike','bicycle','cyclisme'],'directions_bike'],
+    [['avion','flight','voyage','travel','billet'],'flight'],
+    [['train','via','amtrak'],'train'],
+    // Food & Life
+    [['bouffe','nourriture','food','grocerie','epicerie','supermarche','grocery','alimentation'],'shopping_cart'],
+    [['restaurant','manger','dining','cafe','coffee','brasserie','bar'],'restaurant'],
+    [['livraison','delivery','doordash','ubereats','skip'],'delivery_dining'],
+    [['pharmacie','pharmacy','medicament','medication','sante','health','doctor','medecin'],'local_pharmacy'],
+    [['gym','sport','fitness','entrainement','training','piscine','swimming'],'fitness_center'],
+    [['abonnement','subscription','netflix','spotify','disney','amazon','prime','hulu','apple'],'subscriptions'],
+    [['vetement','clothing','shopping','mode','fashion','boutique'],'shopping_bag'],
+    [['enfant','child','garderie','daycare','ecole','school','education'],'child_care'],
+    [['animal','pet','veterinaire','vet','chat','chien','dog','cat'],'pets'],
+    // Income
+    [['salaire','salary','paie','paycheck','wage','emploi','job','travail','work'],'work'],
+    [['locatif','rental','loyer recu','rent received'],'house'],
+    [['investissement','investment','dividende','dividend','bourse','stock'],'trending_up'],
+    [['remboursement','refund','retour'],'payments'],
+    [['cadeau','gift','bonus'],'card_giftcard'],
+    [['freelance','contrat','contract','consultation'],'laptop'],
+    // Other
+    [['loisir','loisirs','fun','entertainment','sortie'],'celebration'],
+    [['livre','book','lecture','reading','bibliotheque'],'menu_book'],
+    [['musique','music'],'music_note'],
+    [['jeu','game','gaming','playstation','xbox','nintendo'],'sports_esports'],
+    [['don','donation','charite','charity'],'volunteer_activism'],
+    [['epargne','savings','rrsp','reer','celi','tfsa'],'savings'],
+    [['frais','fee','bank','banque'],'account_balance'],
+    [['condo','syndic','frais condo'],'apartment'],
+  ];
+  for(const [keywords, icon] of rules) {
+    if(keywords.some(k => n.includes(k))) return icon;
+  }
+  return 'label'; // default
+}
+
+function guessColor(name) {
+  const n = name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  if(['loyer','hypotheque','maison','home','house','condo','logement','appartement'].some(k=>n.includes(k))) return '#1a73e8';
+  if(['auto','voiture','essence','transport','bus','metro','parking'].some(k=>n.includes(k))) return '#7b1fa2';
+  if(['bouffe','restaurant','nourriture','food','epicerie'].some(k=>n.includes(k))) return '#e37400';
+  if(['sante','pharmacie','assurance','vie','protection'].some(k=>n.includes(k))) return '#1e8e3e';
+  if(['telephone','internet','wifi','netflix','spotify','abonnement'].some(k=>n.includes(k))) return '#d81b60';
+  if(['hydro','electricite','gaz','eau','energie'].some(k=>n.includes(k))) return '#00838f';
+  if(['salaire','travail','freelance','investissement'].some(k=>n.includes(k))) return '#2e7d32';
+  if(['taxes','impot','gouvernement'].some(k=>n.includes(k))) return '#5c6bc0';
+  const palette = ['#1a73e8','#7b1fa2','#e37400','#d93025','#1e8e3e','#0097a7','#f57c00','#388e3c'];
+  return palette[name.length % palette.length];
+}
+
+function previewModalIcon(name) {
+  if(!name.trim()) return;
+  const icon  = guessIcon(name);
+  const color = guessColor(name);
+  const preview = document.getElementById('modalIconPreview');
+  if(preview) {
+    preview.style.background = color + '22';
+    preview.style.color = color;
+    preview.querySelector('.mi').textContent = icon;
+  }
+}
+
 function confirmModal() {
   const name   = document.getElementById('modal-name').value.trim();
   const budget = parseFloat(document.getElementById('modal-budget').value) || 0;
   if(!name) { document.getElementById('modal-name').focus(); return; }
 
   const id = 'custom_' + Date.now();
-  const colors = ['#1a73e8','#1e8e3e','#d93025','#e37400','#7b1fa2','#0097a7','#d81b60'];
-  const icons  = ['label','star','bookmark','local_offer','circle','hexagon','pentagon'];
-  const color  = colors[Math.floor(Math.random()*colors.length)];
-  const icon   = icons[Math.floor(Math.random()*icons.length)];
+  const icon  = guessIcon(name);
+  const color = guessColor(name);
 
   const newCat = { id, name, budget, color, icon, type:'expense', _custom:true };
   CATS.push(newCat);
@@ -1576,10 +1694,14 @@ function confirmGroupModal() {
   if(!name) { document.getElementById('gmodal-name').focus(); return; }
 
   const id = 'group_' + Date.now();
-  const groupColors = ['#1a73e8','#1e8e3e','#7b1fa2','#e37400','#d93025'];
-  const groupBgs    = ['#e8f0fe','#e6f4ea','#f3e5f5','#fff3e0','#fce8e6'];
-  const rand = Math.floor(Math.random()*5);
-  const newGroup = { id, label:name, icon:'category', color:groupColors[rand], bg:groupBgs[rand], cats:[], _custom:true };
+  const gColor = guessColor(name);
+  const gIcon  = guessIcon(name);
+  const hexToRgba = (hex, a) => {
+    const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${a})`;
+  };
+  const gBg = gColor + '18';
+  const newGroup = { id, label:name, icon:gIcon, color:gColor, bg:gBg, cats:[], _custom:true };
   GROUPS.push(newGroup);
 
   closeGroupModal();
