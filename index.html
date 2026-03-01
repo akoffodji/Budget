@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -97,7 +97,8 @@
   }
 }
 
-body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg); color:var(--label); min-height:100vh; font-size:14px; overscroll-behavior:none; }
+html { height: -webkit-fill-available; }
+body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg); color:var(--label); min-height:100vh; min-height:-webkit-fill-available; font-size:14px; overscroll-behavior:none; overflow-x:hidden; width:100%; }
 
 /* Safe areas for iPhone notch & home indicator */
 .content { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
@@ -106,7 +107,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 .mi { font-family:'Material Icons Round'; font-style:normal; font-size:20px; line-height:1; display:inline-flex; align-items:center; justify-content:center; user-select:none; }
 .mi-sm { font-size:16px; } .mi-lg { font-size:24px; } .mi-xl { font-size:36px; }
 
-.app { display:flex; min-height:100vh; }
+.app { display:flex; min-height:100vh; min-height:-webkit-fill-available; width:100%; overflow-x:hidden; }
 
 /* SIDEBAR */
 .sidebar { width:256px; background:var(--bg2); border-right:1px solid var(--sep2); display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:300; transform:translateX(-100%); transition:transform .28s cubic-bezier(.4,0,.2,1); padding-top:env(safe-area-inset-top, 0px); }
@@ -125,39 +126,46 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 .nav-icon { color:var(--label3); flex-shrink:0; }
 
 /* TOPBAR */
-.main { margin-left:0; flex:1; min-height:100vh; }
-.topbar { background:var(--bg2); border-bottom:1px solid var(--sep2); display:grid; grid-template-columns:1fr auto 1fr; align-items:end; padding:0 12px env(safe-area-inset-top, 0px) 4px; padding-top:env(safe-area-inset-top, 0px); min-height:calc(56px + env(safe-area-inset-top, 0px)); position:sticky; top:0; z-index:100; box-shadow:var(--shadow-sm); }
-.topbar-left, .topbar-center, .topbar-right { padding-bottom:8px; }
-.topbar-left { display:flex; align-items:center; gap:2px; justify-self:start; }
-.topbar-title { font-size:17px; font-weight:600; }
-.topbar-center { display:flex; align-items:center; justify-content:center; gap:4px; }
-.topbar-right { display:flex; align-items:center; justify-content:flex-end; gap:2px; }
+.main { margin-left:0; flex:1; min-height:100vh; width:100%; min-width:0; overflow-x:hidden; }
+.topbar {
+  background:var(--bg2); border-bottom:1px solid var(--sep2);
+  display:grid; grid-template-columns:auto 1fr auto;
+  align-items:center;
+  padding-left:4px; padding-right:8px;
+  padding-top:env(safe-area-inset-top, 0px);
+  height:calc(44px + env(safe-area-inset-top, 0px));
+  position:sticky; top:0; z-index:100; box-shadow:var(--shadow-sm);
+}
+.topbar-left { display:flex; align-items:center; gap:0; }
+.topbar-title { font-size:15px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:90px; }
+.topbar-center { display:flex; align-items:center; justify-content:center; gap:2px; }
+.topbar-right { display:flex; align-items:center; justify-content:flex-end; gap:0; }
 
-.icon-btn { width:40px; height:40px; border-radius:50%; border:none; background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--label2); transition:background .15s; }
+.icon-btn { width:36px; height:36px; border-radius:50%; border:none; background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--label2); transition:background .15s; }
 .icon-btn:hover { background:var(--fill3); }
 
-.hamburger { width:40px; height:40px; border-radius:50%; border:none; background:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:0; transition:background .15s; flex-shrink:0; }
+.hamburger { width:36px; height:36px; border-radius:50%; border:none; background:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:0; transition:background .15s; flex-shrink:0; }
 .hamburger:hover { background:var(--fill3); }
 .hamburger span { display:block; width:18px; height:1.5px; background:var(--label); border-radius:2px; transition:transform .25s, opacity .2s, width .2s; transform-origin:center; }
 .hamburger.open span:nth-child(1) { transform:translateY(6.5px) rotate(45deg); }
 .hamburger.open span:nth-child(2) { opacity:0; width:0; }
 .hamburger.open span:nth-child(3) { transform:translateY(-6.5px) rotate(-45deg); }
 
-.month-nav { display:flex; align-items:center; background:var(--fill3); border-radius:100px; padding:2px; }
-.month-nav-btn { width:30px; height:30px; border:none; background:none; border-radius:50%; cursor:pointer; color:var(--label2); display:flex; align-items:center; justify-content:center; transition:background .15s; }
+.month-nav { display:flex; align-items:center; background:var(--fill3); border-radius:100px; padding:1px; }
+.month-nav-btn { width:26px; height:26px; border:none; background:none; border-radius:50%; cursor:pointer; color:var(--label2); display:flex; align-items:center; justify-content:center; transition:background .15s; }
 .month-nav-btn:hover { background:var(--fill2); }
 .month-nav-btn:disabled { opacity:.3; cursor:default; }
-.month-nav-label { font-size:13px; font-weight:600; color:var(--label); padding:0 8px; min-width:118px; text-align:center; white-space:nowrap; }
+.month-nav-label { font-size:12px; font-weight:600; color:var(--label); padding:0 4px; min-width:100px; text-align:center; white-space:nowrap; }
 .month-today-btn { font-size:12px; font-weight:600; color:var(--blue); padding:6px 10px; border-radius:100px; border:none; background:none; cursor:pointer; font-family:inherit; transition:background .15s; }
 .month-today-btn:hover { background:var(--blue-light); }
 .month-today-btn.hidden { visibility:hidden; }
 
-.content { padding:20px; max-width:1100px; }
+.content { padding:16px; width:100%; box-sizing:border-box; }
 .view { display:none; }
 .view.active { display:block; }
 
 /* SUMMARY */
-.summary-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:14px; }
+.summary-row { display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:12px; }
 .summary-card { background:var(--bg2); border-radius:var(--radius-xl); padding:18px; box-shadow:var(--shadow-sm); position:relative; overflow:hidden; }
 .summary-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
 .summary-card.income::before { background:var(--green); }
@@ -191,7 +199,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 .bar-safe { background:var(--green); } .bar-warn { background:var(--orange); } .bar-over { background:var(--red); }
 .bar-labels { display:flex; justify-content:space-between; font-size:11px; color:var(--label3); }
 
-.two-col { display:grid; grid-template-columns:1fr 330px; gap:14px; align-items:start; }
+.two-col { display:grid; grid-template-columns:1fr; gap:14px; align-items:start; }
 
 /* SECTIONS */
 .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; cursor:pointer; user-select:none; padding:6px 4px; border-radius:var(--radius); transition:background .1s; }
@@ -243,7 +251,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 .empty-tx .empty-title { font-size:13px; font-weight:600; color:var(--label2); margin-bottom:3px; }
 
 /* ════ MATERIAL DESIGN FORM ════ */
-.add-view { max-width:520px; }
+.add-view { max-width:100%; width:100%; }
 .add-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; }
 .add-title { font-size:20px; font-weight:700; letter-spacing:-.3px; }
 .add-close { width:36px; height:36px; border-radius:50%; border:none; background:var(--fill3); color:var(--label3); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s,color .15s; }
@@ -294,7 +302,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 .md-submit.expense-s:hover { box-shadow:0 4px 16px rgba(217,48,37,.45); }
 
 /* HISTORY */
-.history-container { max-width:800px; }
+.history-container { max-width:100%; width:100%; }
 .seg-control { display:inline-flex; background:var(--fill3); border-radius:var(--radius); padding:2px; margin-bottom:14px; }
 .seg-btn { padding:7px 18px; border-radius:calc(var(--radius) - 2px); border:none; background:none; font-family:inherit; font-size:13px; font-weight:600; color:var(--label3); cursor:pointer; transition:all .15s; }
 .seg-btn.active { background:var(--bg2); color:var(--label); box-shadow:var(--shadow-sm); }
@@ -397,7 +405,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 
 
 /* ── SETTINGS VIEW ── */
-.settings-container { max-width: 640px; }
+.settings-container { max-width: 100%; width:100%; }
 .settings-section {
   background: var(--bg2); border-radius: var(--radius-xl);
   overflow: hidden; box-shadow: var(--shadow-sm); margin-bottom: 20px;
@@ -576,11 +584,35 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 }
 .settings-group-name-input:focus { border-bottom-color: var(--blue); }
 
+
+/* ── FOOTER ── */
+.app-footer {
+  text-align: center;
+  padding: 24px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+  color: var(--label3);
+  font-size: 11px;
+  line-height: 1.6;
+  border-top: 1px solid var(--sep2);
+  margin-top: 8px;
+}
+.app-footer .footer-version {
+  font-weight: 600;
+  color: var(--label3);
+  letter-spacing: .04em;
+  font-size: 11px;
+}
+.app-footer .footer-copy {
+  margin-top: 2px;
+}
+
 @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 .summary-card,.budget-bar-card,.cat-card,.tx-card,.hist-table { animation:fadeUp .3s ease both; }
 
-@media(max-width:860px){ .two-col{grid-template-columns:1fr} .summary-row{grid-template-columns:1fr} .hist-thead,.hist-row{grid-template-columns:70px 1fr 100px 30px} .hist-cat{display:none} .content{padding:14px} }
-@media(max-width:500px){ .md-row{grid-template-columns:1fr} .month-nav-label{min-width:90px;font-size:12px} }
+@media(max-width:600px){ 
+  .hist-thead,.hist-row{grid-template-columns:65px 1fr 90px 28px} 
+  .hist-cat{display:none}
+  .md-row{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -596,14 +628,9 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       Continuer avec Google
     </button>
 
-    <button class="auth-btn auth-btn-github" onclick="signInGitHub()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
-      Continuer avec GitHub
-    </button>
 
     <div class="auth-footer">
-      Vos données sont privées et sécurisées.<br>
-      Chaque compte accède uniquement à son budget.
+      <span data-i18n="authFooter"></span>
     </div>
   </div>
 </div>
@@ -615,7 +642,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
     <div class="user-menu-email" id="umEmail">—</div>
   </div>
   <button class="user-menu-item danger" onclick="signOut()">
-    <span class="mi mi-sm">logout</span> Se déconnecter
+    <span class="mi mi-sm">logout</span> <span data-i18n="signOut"></span>
   </button>
 </div>
 
@@ -632,16 +659,16 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
     <nav class="sidebar-nav">
       <div class="nav-section-label">Navigation</div>
       <button class="nav-item active" id="nav-overview" onclick="showView('overview')">
-        <span class="mi nav-icon">dashboard</span> Vue d'ensemble
+        <span class="mi nav-icon">dashboard</span> <span data-i18n="overview"></span>
       </button>
       <button class="nav-item" id="nav-add" onclick="showView('add')">
-        <span class="mi nav-icon">add_circle</span> Ajouter
+        <span class="mi nav-icon">add_circle</span> <span data-i18n="add"></span>
       </button>
       <button class="nav-item" id="nav-history" onclick="showView('history')">
-        <span class="mi nav-icon">history</span> Historique
+        <span class="mi nav-icon">history</span> <span data-i18n="history"></span>
       </button>
       <button class="nav-item" id="nav-settings" onclick="showView('settings')">
-        <span class="mi nav-icon">tune</span> Objectifs
+        <span class="mi nav-icon">tune</span> <span data-i18n="settings"></span>
       </button>
     </nav>
   </aside>
@@ -652,7 +679,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
         <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()">
           <span></span><span></span><span></span>
         </button>
-        <div class="topbar-title" id="topbarTitle">Vue d'ensemble</div>
+        <div class="topbar-title" id="topbarTitle"></div>
       </div>
       <div class="topbar-center">
         <div id="monthNavWrap" class="month-nav">
@@ -664,7 +691,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
             <span class="mi mi-sm">chevron_right</span>
           </button>
         </div>
-        <button class="month-today-btn hidden" id="mnToday" onclick="goToday()">Aujourd'hui</button>
+        <button class="month-today-btn hidden" id="mnToday" onclick="goToday()" data-i18n="today"></button>
       </div>
       <div class="topbar-right">
         <button class="icon-btn" onclick="showView('overview')" title="Accueil">
@@ -692,32 +719,32 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
               <div class="summary-icon"><span class="mi mi-lg">trending_up</span></div>
               <button class="quick-add-btn" onclick="quickAdd('income')" title="Ajouter un revenu"><span class="mi mi-sm">add</span></button>
             </div>
-            <div class="summary-label">REVENUS CE MOIS</div>
+            <div class="summary-label" data-i18n="incomeCard"></div>
             <div class="summary-value" id="ov-income">0 $</div>
-            <div class="summary-sub">Objectif <strong>6 700 $</strong></div>
+            <div class="summary-sub"><span data-i18n="target"></span> <strong>6 700 $</strong></div>
           </div>
           <div class="summary-card expense">
             <div class="summary-icon-row">
               <div class="summary-icon"><span class="mi mi-lg">trending_down</span></div>
               <button class="quick-add-btn" onclick="quickAdd('expense')" title="Ajouter une dépense"><span class="mi mi-sm">add</span></button>
             </div>
-            <div class="summary-label">DÉPENSES CE MOIS</div>
+            <div class="summary-label" data-i18n="expenseCard"></div>
             <div class="summary-value" id="ov-expense">0 $</div>
-            <div class="summary-sub">Objectif <strong>4 428 $</strong></div>
+            <div class="summary-sub"><span data-i18n="target"></span> <strong>4 428 $</strong></div>
           </div>
           <div class="summary-card savings">
             <div class="summary-icon-row">
               <div class="summary-icon"><span class="mi mi-lg">savings</span></div>
             </div>
-            <div class="summary-label">ÉPARGNE NETTE</div>
+            <div class="summary-label" data-i18n="savingsCard"></div>
             <div class="summary-value" id="ov-savings">0 $</div>
-            <div class="summary-sub">Objectif <strong>2 272 $</strong></div>
+            <div class="summary-sub"><span data-i18n="target"></span> <strong>2 272 $</strong></div>
           </div>
         </div>
 
         <div class="budget-bar-card">
           <div class="bbc-header">
-            <div class="bbc-title">Dépenses vs budget mensuel</div>
+            <div class="bbc-title" data-i18n="budgetBarTitle"></div>
             <div class="bbc-meta" id="ov-bar-meta">0 / 4 428 $</div>
           </div>
           <div class="bar-outer"><div class="bar-inner bar-safe" id="ov-bar" style="width:0%"></div></div>
@@ -732,8 +759,8 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
           <div id="sec-cats">
             <div class="section-header" onclick="toggleSection('cats')">
               <div style="display:flex;align-items:center;gap:8px">
-                <div class="section-title">Catégories</div>
-                <div class="section-sub" id="ov-cat-sub">Ce mois</div>
+                <div class="section-title" data-i18n="categories"></div>
+                <div class="section-sub" id="ov-cat-sub" data-i18n="thisMonth"></div>
               </div>
               <span class="mi section-chevron">expand_more</span>
             </div>
@@ -742,7 +769,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 
           <div id="sec-recent">
             <div class="section-header" onclick="toggleSection('recent')">
-              <div class="section-title">Récent</div>
+              <div class="section-title" data-i18n="recent"></div>
               <span class="mi section-chevron">expand_more</span>
             </div>
             <div class="section-body">
@@ -756,16 +783,16 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       <div class="view" id="view-add">
         <div class="add-view">
           <div class="add-header">
-            <div class="add-title">Nouvelle transaction</div>
+            <div class="add-title" data-i18n="newTx"></div>
             <button class="add-close" onclick="showView('overview')"><span class="mi">close</span></button>
           </div>
 
           <div class="md-type-toggle">
             <button class="md-type-btn active income" id="pick-income" onclick="pickType('income')">
-              <span class="mi mi-sm">arrow_upward</span> Revenu
+              <span class="mi mi-sm">arrow_upward</span> <span data-i18n="typeIncome"></span>
             </button>
             <button class="md-type-btn expense" id="pick-expense" onclick="pickType('expense')">
-              <span class="mi mi-sm">arrow_downward</span> Dépense
+              <span class="mi mi-sm">arrow_downward</span> <span data-i18n="typeExpense"></span>
             </button>
           </div>
 
@@ -773,7 +800,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
           <div class="md-field md-amount with-icon">
             <span class="mi md-field-icon" style="top:28px;transform:none">attach_money</span>
             <input type="number" id="f-amount" placeholder=" " min="0" step="0.01" oninput="updateAmtColor()">
-            <label class="md-field-label">Montant</label>
+            <label class="md-field-label" data-i18n="amount"></label>
             <div class="md-field-underline"></div>
           </div>
 
@@ -781,7 +808,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
           <div class="md-field with-icon">
             <span class="mi md-field-icon">edit</span>
             <input type="text" id="f-desc" placeholder=" ">
-            <label class="md-field-label">Description</label>
+            <label class="md-field-label" data-i18n="description"></label>
             <div class="md-field-underline"></div>
           </div>
 
@@ -790,7 +817,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
             <div class="md-field with-icon has-value">
               <span class="mi md-field-icon">category</span>
               <select id="f-cat"></select>
-              <label class="md-field-label">Catégorie</label>
+              <label class="md-field-label" data-i18n="category"></label>
               <span class="mi mi-sm md-select-arrow">expand_more</span>
               <div class="md-field-underline"></div>
             </div>
@@ -798,13 +825,13 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
             <div class="md-field with-icon has-value">
               <span class="mi md-field-icon">calendar_today</span>
               <input type="date" id="f-date">
-              <label class="md-field-label">Date</label>
+              <label class="md-field-label" data-i18n="date"></label>
               <div class="md-field-underline"></div>
             </div>
           </div>
 
           <button class="md-submit income-s" id="submitBtn" onclick="addTx()">
-            <span class="mi mi-sm">check</span> Enregistrer
+            <span class="mi mi-sm">check</span> <span data-i18n="save"></span>
           </button>
         </div>
       </div>
@@ -813,12 +840,12 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       <div class="view" id="view-history">
         <div class="history-container">
           <div class="seg-control">
-            <button class="seg-btn active" onclick="filterHist('all',this)">Tout</button>
-            <button class="seg-btn" onclick="filterHist('income',this)">Revenus</button>
-            <button class="seg-btn" onclick="filterHist('expense',this)">Dépenses</button>
+            <button class="seg-btn active" onclick="filterHist('all',this)" data-i18n="all"></button>
+            <button class="seg-btn" onclick="filterHist('income',this)" data-i18n="revenues"></button>
+            <button class="seg-btn" onclick="filterHist('expense',this)" data-i18n="expenses"></button>
           </div>
           <div class="hist-table">
-            <div class="hist-thead"><div>Date</div><div>Description</div><div>Catégorie</div><div>Montant</div><div></div></div>
+            <div class="hist-thead"><div data-i18n="colDate"></div><div data-i18n="colDesc"></div><div data-i18n="colCat"></div><div data-i18n="colAmt"></div><div></div></div>
             <div id="histBody"></div>
           </div>
         </div>
@@ -833,15 +860,15 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
             <div class="settings-section-header">
               <div class="settings-section-icon" style="background:#e8f0fe;color:#1a73e8"><span class="mi">flag</span></div>
               <div>
-                <div class="settings-section-title">Objectifs globaux</div>
-                <div class="settings-section-sub">Revenus, dépenses et épargne mensuels</div>
+                <div class="settings-section-title" data-i18n="globalTargets"></div>
+                <div class="settings-section-sub" data-i18n="globalSub"></div>
               </div>
             </div>
             <div class="settings-row">
               <div class="settings-row-icon" style="background:#e6f4ea;color:#1e8e3e"><span class="mi">trending_up</span></div>
               <div class="settings-row-label">
-                <div class="settings-row-name">Revenus cibles</div>
-                <div class="settings-row-desc">Revenu mensuel attendu</div>
+                <div class="settings-row-name" data-i18n="incomeTarget"></div>
+                <div class="settings-row-desc" data-i18n="incomeDesc"></div>
               </div>
               <div class="settings-input-wrap">
                 <input class="settings-input" type="number" id="s-income" min="0" step="100">
@@ -851,8 +878,8 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
             <div class="settings-row">
               <div class="settings-row-icon" style="background:#fce8e6;color:#d93025"><span class="mi">trending_down</span></div>
               <div class="settings-row-label">
-                <div class="settings-row-name">Budget dépenses</div>
-                <div class="settings-row-desc">Maximum mensuel total</div>
+                <div class="settings-row-name" data-i18n="expenseBudget"></div>
+                <div class="settings-row-desc" data-i18n="expenseDesc"></div>
               </div>
               <div class="settings-input-wrap">
                 <input class="settings-input" type="number" id="s-expense" min="0" step="100" oninput="updateSettingsTotal()">
@@ -862,8 +889,8 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
             <div class="settings-row">
               <div class="settings-row-icon" style="background:#e8f0fe;color:#1a73e8"><span class="mi">savings</span></div>
               <div class="settings-row-label">
-                <div class="settings-row-name">Épargne cible</div>
-                <div class="settings-row-desc">Montant à mettre de côté</div>
+                <div class="settings-row-name" data-i18n="savingsTarget"></div>
+                <div class="settings-row-desc" data-i18n="savingsDesc"></div>
               </div>
               <div class="settings-input-wrap">
                 <input class="settings-input" type="number" id="s-savings" min="0" step="100">
@@ -876,12 +903,16 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
           <div id="settingsCatSections"></div>
 
           <button class="settings-save-btn" onclick="saveSettings()">
-            <span class="mi mi-sm">save</span> Enregistrer les objectifs
+            <span class="mi mi-sm">save</span> <span data-i18n="saveSettings"></span>
           </button>
 
         </div>
       </div>
 
+    <footer class="app-footer">
+        <div class="footer-version">v1.260301.1" id="footerVersion">v1.260301.1</div>
+        <div class="footer-copy" id="footerCopy">© 2026 Budget 2026</div>
+    </footer>
     </div>
   </div>
 </div>
@@ -891,26 +922,26 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 <div class="modal-overlay" id="addCatModal">
   <div class="modal-card">
     <div class="modal-header">
-      <div class="modal-title" id="modalTitle">Nouvelle catégorie</div>
+      <div class="modal-title" id="modalTitle" data-i18n="newCatTitle"></div>
       <button class="modal-close" onclick="closeModal()"><span class="mi">close</span></button>
     </div>
     <div class="modal-body">
       <div class="modal-field">
-        <div class="modal-label">Nom</div>
+        <div class="modal-label" data-i18n="modalName"></div>
         <input class="modal-input" id="modal-name" type="text" placeholder="ex: Netflix">
       </div>
       <div class="modal-field">
-        <div class="modal-label">Budget mensuel</div>
+        <div class="modal-label" data-i18n="modalBudget"></div>
         <input class="modal-input" id="modal-budget" type="number" placeholder="0" min="0" step="10">
       </div>
       <div class="modal-field" id="modal-group-field">
-        <div class="modal-label">Groupe</div>
+        <div class="modal-label" data-i18n="modalGroup"></div>
         <select class="modal-input" id="modal-group"></select>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Annuler</button>
-      <button class="modal-btn modal-btn-confirm" id="modalConfirmBtn" onclick="confirmModal()">Ajouter</button>
+      <button class="modal-btn modal-btn-cancel" onclick="closeModal()" data-i18n="cancel"></button>
+      <button class="modal-btn modal-btn-confirm" id="modalConfirmBtn" onclick="confirmModal()" data-i18n="confirm"></button>
     </div>
   </div>
 </div>
@@ -919,7 +950,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 <div class="modal-overlay" id="addGroupModal">
   <div class="modal-card">
     <div class="modal-header">
-      <div class="modal-title">Nouveau groupe</div>
+      <div class="modal-title" data-i18n="newGroupTitle"></div>
       <button class="modal-close" onclick="closeGroupModal()"><span class="mi">close</span></button>
     </div>
     <div class="modal-body">
@@ -929,17 +960,98 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       </div>
     </div>
     <div class="modal-footer">
-      <button class="modal-btn modal-btn-cancel" onclick="closeGroupModal()">Annuler</button>
-      <button class="modal-btn modal-btn-confirm" onclick="confirmGroupModal()">Créer</button>
+      <button class="modal-btn modal-btn-cancel" onclick="closeGroupModal()" data-i18n="cancel"></button>
+      <button class="modal-btn modal-btn-confirm" onclick="confirmGroupModal()" data-i18n="create"></button>
     </div>
   </div>
 </div>
 <div class="loading-overlay" id="loadingOverlay">
   <div class="loading-spinner"></div>
-  <div class="loading-label">Chargement des données…</div>
+  <div class="loading-label" data-i18n="loading"></div>
 </div>
 
 <script>
+// ── i18n — detect phone language ─────────────────────────────────────────────
+const I18N = {
+  fr: {
+    overview:"Vue d'ensemble", add:"Ajouter", history:"Historique", settings:"Objectifs",
+    authSub:"Connectez-vous pour accéder<br>à votre budget personnel",
+    authBtn:"Continuer avec Google",
+    authFooter:"Vos données sont privées et sécurisées.<br>Chaque compte accède uniquement à son budget.",
+    signOut:"Se déconnecter",
+    incomeCard:"REVENUS CE MOIS", expenseCard:"DÉPENSES CE MOIS", savingsCard:"ÉPARGNE NETTE",
+    target:"Objectif", budgetBarTitle:"Dépenses vs budget mensuel",
+    categories:"Catégories", recent:"Récent", thisMonth:"Ce mois",
+    newTx:"Nouvelle transaction", typeIncome:"Revenu", typeExpense:"Dépense",
+    amount:"Montant", description:"Description", category:"Catégorie", date:"Date",
+    save:"Enregistrer",
+    all:"Tout", revenues:"Revenus", expenses:"Dépenses",
+    colDate:"Date", colDesc:"Description", colCat:"Catégorie", colAmt:"Montant",
+    globalTargets:"Objectifs globaux", globalSub:"Revenus, dépenses et épargne mensuels",
+    incomeTarget:"Revenus cibles", incomeDesc:"Revenu mensuel attendu",
+    expenseBudget:"Budget dépenses", expenseDesc:"Maximum mensuel total",
+    savingsTarget:"Épargne cible", savingsDesc:"Montant à mettre de côté",
+    catBudget:"Budget par catégorie", groupTotal:"Total",
+    addCat:"Ajouter une catégorie", addGroup:"Nouveau groupe",
+    saveSettings:"Enregistrer les objectifs", saving:"Sauvegarde…",
+    settingsSaved:"Objectifs enregistrés !",
+    newCatTitle:"Nouvelle catégorie", newGroupTitle:"Nouveau groupe",
+    modalName:"Nom", modalBudget:"Budget mensuel", modalGroup:"Groupe",
+    cancel:"Annuler", confirm:"Ajouter", create:"Créer",
+    txSaved:"enregistré", txDeleted:"Transaction supprimée",
+    catAdded:"ajoutée", groupCreated:"créé",
+    catDeleted:"Catégorie supprimée", groupDeleted:"Groupe supprimé",
+    saveError:"Erreur de sauvegarde", connectFirst:"Connectez-vous d'abord",
+    validAmount:"Entrez un montant valide", validDesc:"Entrez une description", validDate:"Choisissez une date",
+    loading:"Chargement des données…",
+    updatedOn:"Mis à jour le", allRights:"Tous droits réservés",
+    today:"Aujourd'hui", disconnect:"Se déconnecter",
+    installTitle:"Installer Budget 2026",
+    incomeLabel:"Revenu", expenseLabel:"Dépense",
+    perMonth:"$/mois", perMonthShort:"$/m",
+  },
+  en: {
+    overview:"Overview", add:"Add", history:"History", settings:"Goals",
+    authSub:"Sign in to access<br>your personal budget",
+    authBtn:"Continue with Google",
+    authFooter:"Your data is private and secure.<br>Each account only sees its own budget.",
+    signOut:"Sign out",
+    incomeCard:"INCOME THIS MONTH", expenseCard:"EXPENSES THIS MONTH", savingsCard:"NET SAVINGS",
+    target:"Goal", budgetBarTitle:"Expenses vs monthly budget",
+    categories:"Categories", recent:"Recent", thisMonth:"This month",
+    newTx:"New transaction", typeIncome:"Income", typeExpense:"Expense",
+    amount:"Amount", description:"Description", category:"Category", date:"Date",
+    save:"Save",
+    all:"All", revenues:"Income", expenses:"Expenses",
+    colDate:"Date", colDesc:"Description", colCat:"Category", colAmt:"Amount",
+    globalTargets:"Global goals", globalSub:"Monthly income, expenses and savings",
+    incomeTarget:"Target income", incomeDesc:"Expected monthly income",
+    expenseBudget:"Expense budget", expenseDesc:"Monthly maximum",
+    savingsTarget:"Savings goal", savingsDesc:"Amount to set aside",
+    catBudget:"Budget per category", groupTotal:"Total",
+    addCat:"Add a category", addGroup:"New group",
+    saveSettings:"Save goals", saving:"Saving…",
+    settingsSaved:"Goals saved!",
+    newCatTitle:"New category", newGroupTitle:"New group",
+    modalName:"Name", modalBudget:"Monthly budget", modalGroup:"Group",
+    cancel:"Cancel", confirm:"Add", create:"Create",
+    txSaved:"saved", txDeleted:"Transaction deleted",
+    catAdded:"added", groupCreated:"created",
+    catDeleted:"Category deleted", groupDeleted:"Group deleted",
+    saveError:"Save error", connectFirst:"Please sign in first",
+    validAmount:"Enter a valid amount", validDesc:"Enter a description", validDate:"Choose a date",
+    loading:"Loading data…",
+    updatedOn:"Updated", allRights:"All rights reserved",
+    today:"Today", disconnect:"Sign out",
+    installTitle:"Install Budget 2026",
+    incomeLabel:"Income", expenseLabel:"Expense",
+    perMonth:"$/mo", perMonthShort:"$/mo",
+  }
+};
+const LANG = (navigator.language||'fr').toLowerCase().startsWith('fr') ? 'fr' : 'en';
+const t = I18N[LANG];
+document.documentElement.lang = LANG;
+
 let BUDGET_TOTAL=4428, INCOME_TARGET=6700, SAVINGS_TARGET=2272;
 // userSettings holds all configurable values loaded from Supabase
 let userSettings = { income_target:6700, expense_budget:4428, savings_target:2272, category_budgets:{} };
@@ -989,12 +1101,7 @@ async function signInGoogle() {
   });
 }
 
-async function signInGitHub() {
-  await supa.auth.signInWithOAuth({
-    provider: 'github',
-    options: { redirectTo: 'https://creative-twilight-42e692.netlify.app' }
-  });
-}
+
 
 async function signOut() {
   closeUserMenu();
@@ -1027,6 +1134,7 @@ function showApp(user) {
   }
   document.getElementById('umName').textContent = name;
   document.getElementById('umEmail').textContent = user.email || '';
+  applyI18n();
 }
 
 function toggleUserMenu() {
@@ -1178,14 +1286,14 @@ function buildSettingsPayload() {
 }
 
 async function saveSettings() {
-  if(!currentUser) { toast("Connectez-vous d'abord", 'warning'); return; }
+  if(!currentUser) { toast(t.connectFirst, 'warning'); return; }
 
   // 1. Sync DOM inputs → memory arrays
   flushDOMToMemory();
 
   // 2. Show saving indicator
   const btn = document.querySelector('.settings-save-btn');
-  if(btn) { btn.disabled = true; btn.innerHTML = '<span class="mi mi-sm">hourglass_empty</span> Sauvegarde…'; }
+  if(btn) { btn.disabled = true; btn.innerHTML = `<span class="mi mi-sm">hourglass_empty</span> ${t.saving}`; }
 
   try {
     const payload = buildSettingsPayload();
@@ -1199,13 +1307,13 @@ async function saveSettings() {
       category_budgets: payload.category_budgets
     };
 
-    toast('Objectifs enregistrés !', 'check_circle');
+    toast(t.settingsSaved, 'check_circle');
     showView('overview');
   } catch(e) {
     console.error('Settings save failed:', e);
-    toast('Erreur : ' + (e.message || 'vérifiez la connexion'), 'error');
+    toast(t.saveError + ': ' + (e.message||''), 'error');
   } finally {
-    if(btn) { btn.disabled = false; btn.innerHTML = '<span class="mi mi-sm">save</span> Enregistrer les objectifs'; }
+    if(btn) { btn.disabled = false; btn.innerHTML = `<span class="mi mi-sm">save</span> ${t.saveSettings}`; }
   }
 }
 
@@ -1253,7 +1361,7 @@ function renderSettingsView() {
     // Add category button
     const addBtn = document.createElement('button');
     addBtn.className = 'add-cat-btn';
-    addBtn.innerHTML = `<span class="mi mi-sm">add_circle</span> Ajouter une catégorie`;
+    addBtn.innerHTML = `<span class="mi mi-sm">add_circle</span> ${t.addCat}`;
     addBtn.onclick = () => openAddCatModal(g.id);
     section.appendChild(addBtn);
 
@@ -1305,7 +1413,7 @@ function updateGroupTotal(groupId) {
     .map(id => parseFloat(document.getElementById('s-cat-budget-'+id)?.value)||0)
     .reduce((s,v)=>s+v, 0);
   const el = document.getElementById('gt-'+groupId);
-  if(el) el.textContent = fmt(total) + ' / mois';
+  if(el) el.textContent = fmt(total) + ' ' + t.perMonth;
 }
 
 function updateSettingsTotal() {}
@@ -1319,7 +1427,7 @@ function deleteCat(catId, groupId) {
   const row = document.getElementById('cat-row-'+catId);
   if(row) row.remove();
   updateGroupTotal(groupId);
-  toast('Catégorie supprimée', 'delete');
+  toast(t.catDeleted, 'delete');
 }
 
 function deleteGroup(groupId) {
@@ -1327,7 +1435,7 @@ function deleteGroup(groupId) {
   if(idx>-1) GROUPS.splice(idx,1);
   const el = document.getElementById('settings-group-'+groupId);
   if(el) el.remove();
-  toast('Groupe supprimé', 'delete');
+  toast(t.groupDeleted, 'delete');
 }
 
 // ── ADD CATEGORY MODAL ────────────────────────────────────────────────────────
@@ -1338,8 +1446,8 @@ function openAddCatModal(groupId) {
   document.getElementById('modal-name').value   = '';
   document.getElementById('modal-budget').value = '';
   document.getElementById('modal-group-field').style.display = 'none';
-  document.getElementById('modalTitle').textContent = 'Nouvelle catégorie';
-  document.getElementById('modalConfirmBtn').textContent = 'Ajouter';
+  document.getElementById('modalTitle').textContent = t.newCatTitle;
+  document.getElementById('modalConfirmBtn').textContent = t.confirm;
   document.getElementById('addCatModal').classList.add('open');
   setTimeout(()=>document.getElementById('modal-name').focus(), 200);
 }
@@ -1371,7 +1479,7 @@ function confirmModal() {
   }
 
   closeModal();
-  toast(`Catégorie "${name}" ajoutée`, 'check_circle');
+  toast(`"${name}" ${t.catAdded}`, 'check_circle');
 }
 
 // ── ADD GROUP MODAL ───────────────────────────────────────────────────────────
@@ -1398,7 +1506,7 @@ function confirmGroupModal() {
 
   closeGroupModal();
   renderSettingsView(); // re-render to show new group
-  toast(`Groupe "${name}" créé`, 'check_circle');
+  toast(`"${name}" ${t.groupCreated}`, 'check_circle');
 }
 
 const fmt  = n=>new Intl.NumberFormat('fr-CA',{style:'currency',currency:'CAD',maximumFractionDigits:0}).format(n);
@@ -1415,7 +1523,24 @@ function toast(msg,icon='check_circle'){
   el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2800);
 }
 
-const titles={overview:"Vue d'ensemble",add:"Ajouter",history:"Historique",settings:"Objectifs"};
+// ── i18n APPLY ─────────────────────────────────────────────────────────────
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if(t[key] !== undefined) el.innerHTML = t[key];
+  });
+  // Footer
+  const fv = document.getElementById('footerVersion');
+  const fc = document.getElementById('footerCopy');
+  const d  = LANG==='fr' ? '01 Mar 2026' : 'Mar 01, 2026';
+  if(fv) fv.textContent = 'v1.260301.1 · ' + t.updatedOn + ' ' + d;
+  if(fc) fc.textContent = '© 2026 Budget 2026 · ' + t.allRights;
+  // Set topbar title if empty
+  const ttEl = document.getElementById('topbarTitle');
+  if(ttEl && !ttEl.textContent.trim()) ttEl.textContent = t.overview;
+}
+
+const titles = { overview:t.overview, add:t.add, history:t.history, settings:t.settings };
 function showView(id){
   closeSidebar();
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -1474,20 +1599,20 @@ function addTx(){
   const desc=document.getElementById('f-desc').value.trim();
   const date=document.getElementById('f-date').value;
   const cat=document.getElementById('f-cat').value;
-  if(!amount||amount<=0){ toast('Entrez un montant valide','warning'); return; }
-  if(!desc){ toast('Entrez une description','warning'); return; }
-  if(!date){ toast('Choisissez une date','warning'); return; }
+  if(!amount||amount<=0){ toast(t.validAmount,'warning'); return; }
+  if(!desc){ toast(t.validDesc,'warning'); return; }
+  if(!date){ toast(t.validDate,'warning'); return; }
   const newTx = {id:Date.now().toString(),type:currentType,amount,desc,date,cat};
   txs.unshift(newTx);
   saveTx(newTx);
   document.getElementById('f-amount').value='';
   document.getElementById('f-desc').value='';
   document.getElementById('f-date').value=today();
-  toast(`${currentType==='income'?'Revenu':'Dépense'} de ${fmtD(amount)} enregistré`);
+  toast(`${currentType==='income'?t.incomeLabel:t.expenseLabel} ${fmtD(amount)} ${t.txSaved}`);
   showView('overview');
 }
 
-function deleteTx(id){ txs=txs.filter(t=>t.id!==id); deleteTxRemote(id); renderOverview(); renderHistory(); toast('Transaction supprimée','delete'); }
+function deleteTx(id){ txs=txs.filter(t=>t.id!==id); deleteTxRemote(id); renderOverview(); renderHistory(); toast(t.txDeleted,'delete'); }
 
 const collapsedSections=new Set();
 function toggleSection(id){
@@ -1602,7 +1727,7 @@ function renderHistory(){
 }
 
 async function init(){
-  initTheme(); updateMonthNav();
+  initTheme(); updateMonthNav(); applyI18n();
   document.getElementById('f-date').value=today();
   buildSelect();
 
