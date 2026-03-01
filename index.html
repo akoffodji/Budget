@@ -138,6 +138,40 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 }
 .topbar-left { display:flex; align-items:center; gap:0; }
 .topbar-title { font-size:15px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:90px; }
+/* Hide title on mobile when on overview (no need — month nav is enough) */
+@media(max-width:700px) {
+  .topbar-title.is-overview { display: none; }
+}
+/* Topbar right icon collapse */
+.topbar-right { position: relative; }
+.topbar-icons-wrap {
+  display: flex; align-items: center; gap: 0;
+  transition: all .2s;
+}
+.topbar-icons-wrap.collapsed .icon-btn:not(.user-avatar-wrap) {
+  width: 0; overflow: hidden; padding: 0; opacity: 0; pointer-events: none;
+}
+.topbar-expand-btn {
+  width: 36px; height: 36px; border-radius: 50%; border: none;
+  background: var(--fill3); cursor: pointer; display: none;
+  align-items: center; justify-content: center; color: var(--label2);
+  margin-right: 4px; transition: background .15s;
+}
+.topbar-expand-btn:hover { background: var(--fill4); }
+/* On narrow screens show the expand button and collapse icons */
+@media(max-width:420px) {
+  .topbar-expand-btn { display: flex; }
+  .topbar-icons-wrap.collapsed .icon-btn { 
+    width: 0; overflow: hidden; padding: 0; opacity: 0; pointer-events: none;
+    margin: 0; min-width: 0;
+  }
+  .topbar-icons-wrap { 
+    overflow: hidden; max-width: 0; transition: max-width .25s ease;
+  }
+  .topbar-icons-wrap.expanded {
+    max-width: 200px;
+  }
+}
 .topbar-center { display:flex; align-items:center; justify-content:center; gap:2px; }
 .topbar-right { display:flex; align-items:center; justify-content:flex-end; gap:0; }
 
@@ -898,6 +932,36 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 .cat-modal-empty { text-align: center; padding: 40px 16px; color: var(--label3); font-size: 14px; }
 .cat-detail-row { cursor: pointer; }
 
+
+/* ── DEMO MODE ── */
+.auth-btn-demo {
+  width: 100%; padding: 13px; border-radius: var(--radius-xl);
+  border: 2px dashed var(--sep); background: transparent;
+  font-family: inherit; font-size: 15px; font-weight: 600;
+  color: var(--label2); cursor: pointer; margin-top: 10px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all .2s;
+}
+.auth-btn-demo:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+.demo-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+  background: linear-gradient(90deg, #f29900, #e37400);
+  color: #fff; font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 6px 16px; padding-top: calc(6px + env(safe-area-inset-top));
+  letter-spacing: .03em;
+}
+.demo-banner-exit {
+  margin-left: auto; padding: 2px 10px; border-radius: 20px;
+  border: 1.5px solid rgba(255,255,255,.6); background: transparent;
+  color: #fff; font-family: inherit; font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: background .15s;
+}
+.demo-banner-exit:hover { background: rgba(255,255,255,.2); }
+/* Push app content down when banner visible */
+body.demo-mode .app { padding-top: calc(32px + env(safe-area-inset-top)); }
+body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top)); }
+
 @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 .summary-card,.budget-bar-card,.cat-card,.tx-card,.hist-table { animation:fadeUp .3s ease both; }
 
@@ -928,10 +992,27 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       <span data-i18n="authBtn"></span>
     </button>
 
+    <div class="auth-demo-sep" id="authDemoSep" style="display:none;align-items:center;gap:10px;margin:14px 0 0;color:var(--label3);font-size:12px">
+      <div style="flex:1;height:1px;background:var(--sep2)"></div>
+      <span id="authDemoSepLabel">ou</span>
+      <div style="flex:1;height:1px;background:var(--sep2)"></div>
+    </div>
+    <button class="auth-btn-demo" id="authDemoBtn" onclick="enterDemoMode()" style="display:none">
+      <span class="mi" style="font-size:18px">science</span>
+      <span id="authDemoLabel">Mode démo — sans connexion</span>
+    </button>
+
     <div class="auth-footer">
       <span data-i18n="authFooter"></span>
     </div>
   </div>
+</div>
+
+<!-- DEMO BANNER -->
+<div class="demo-banner" id="demoBanner" style="display:none">
+  <span class="mi" style="font-size:14px">science</span>
+  <span id="demoBannerLabel">MODE DÉMO — données fictives</span>
+  <button class="demo-banner-exit" onclick="exitDemoMode()" id="demoBannerExit">Quitter</button>
 </div>
 
 <!-- USER MENU -->
@@ -1005,18 +1086,23 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
         <button class="month-today-btn hidden" id="mnToday" onclick="goToday()" data-i18n="today"></button>
       </div>
       <div class="topbar-right">
-        <button class="icon-btn" onclick="showView('overview')" title="Accueil">
-          <span class="mi">home</span>
+        <button class="topbar-expand-btn" id="topbarExpandBtn" onclick="toggleTopbarIcons()" title="Menu">
+          <span class="mi" id="topbarExpandIcon">more_horiz</span>
         </button>
-        <button class="icon-btn" onclick="showView('settings')" title="Objectifs">
-          <span class="mi">tune</span>
-        </button>
-        <button class="icon-btn" onclick="toggleTheme()" title="Thème">
-          <span class="mi" id="themeIcon">dark_mode</span>
-        </button>
-        <button class="user-avatar" id="userAvatarBtn" onclick="toggleUserMenu()" style="display:none">
-          <span id="userInitial">?</span>
-        </button>
+        <div class="topbar-icons-wrap" id="topbarIconsWrap">
+          <button class="icon-btn" onclick="showView('overview')" title="Accueil" id="topbarHomeBtn">
+            <span class="mi">home</span>
+          </button>
+          <button class="icon-btn" onclick="showView('settings')" title="Objectifs" id="topbarSettingsBtn">
+            <span class="mi">tune</span>
+          </button>
+          <button class="icon-btn" onclick="toggleTheme()" title="Thème" id="topbarThemeBtn">
+            <span class="mi" id="themeIcon">dark_mode</span>
+          </button>
+          <button class="user-avatar" id="userAvatarBtn" onclick="toggleUserMenu()" style="display:none">
+            <span id="userInitial">?</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1259,7 +1345,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       </div>
 
     <footer class="app-footer">
-        <div class="footer-version" id="footerVersion">v1.260301.17</div>
+        <div class="footer-version" id="footerVersion">v1.260301.20</div>
         <div class="footer-copy" id="footerCopy">© 2026 Budget 2026</div>
     </footer>
     </div>
@@ -1451,7 +1537,8 @@ const I18N = {
     loading:"Chargement des données…",
     updatedOn:"Mis à jour le", allRights:"Tous droits réservés",
     today:"Aujourd'hui", disconnect:"Se déconnecter",
-    noTx:"Aucune transaction", exportCSV:"Exporter CSV", importCSV:"Importer CSV", importing:"Import en cours…", importOk:"transactions importées", importErr:"Erreur d'import", addFirst:"Ajoutez votre première entrée",
+    noTx:"Aucune transaction",
+    demoMode:"Mode démo — données fictives", demoExit:"Quitter la démo", demoSep:"ou", demoBtn:"Mode démo — sans connexion", exportCSV:"Exporter CSV", importCSV:"Importer CSV", importing:"Import en cours…", importOk:"transactions importées", importErr:"Erreur d'import", addFirst:"Ajoutez votre première entrée",
     addIncome:"Ajouter un revenu", addExpense:"Ajouter une dépense",
     incomeProgress:"du revenu cible", expenseProgress:"du budget utilisé",
     installTitle:"Installer Budget 2026",
@@ -1494,7 +1581,8 @@ const I18N = {
     loading:"Loading data…",
     updatedOn:"Updated", allRights:"All rights reserved",
     today:"Today", disconnect:"Sign out",
-    noTx:"No transactions", exportCSV:"Export CSV", importCSV:"Import CSV", importing:"Importing…", importOk:"transactions imported", importErr:"Import error", addFirst:"Add your first entry",
+    noTx:"No transactions",
+    demoMode:"DEMO MODE — sample data", demoExit:"Exit demo", demoSep:"or", demoBtn:"Demo mode — no login required", exportCSV:"Export CSV", importCSV:"Import CSV", importing:"Importing…", importOk:"transactions imported", importErr:"Import error", addFirst:"Add your first entry",
     addIncome:"Add income", addExpense:"Add expense",
     incomeProgress:"of target income", expenseProgress:"of budget used",
     installTitle:"Install Budget 2026",
@@ -2525,6 +2613,145 @@ function confirmGroupModal() {
 
 
 
+
+// ── DEMO MODE ─────────────────────────────────────────────────────────────────
+let _demoMode = false;
+
+function enterDemoMode() {
+  _demoMode = true;
+  document.body.classList.add('demo-mode');
+
+  // Fake user
+  currentUser = { id: 'demo-user', email: 'demo@budget2026.app', user_metadata: { full_name: 'Utilisateur Démo', avatar_url: null } };
+
+  // Demo CATS budgets
+  CATS.forEach(c => {
+    const demoBudgets = {
+      hypotheques:1800, frais_condo:350, taxes:300, bell:180, hydro:88,
+      pret_auto:550, essence:150, entretien_auto:80, bouffe:700,
+      assurances:170, ass_vie:160, maintenance:100, autres_dep:100
+    };
+    if(demoBudgets[c.id] !== undefined) c.budget = demoBudgets[c.id];
+  });
+  INCOME_TARGET = 6700;
+  recomputeTotals();
+  userSettings = { income_target: INCOME_TARGET, expense_budget: BUDGET_TOTAL, savings_target: SAVINGS_TARGET, category_budgets: {} };
+
+  // Generate realistic demo transactions for current + last 2 months
+  txs = [];
+  const now = new Date();
+  const demoData = [
+    // Revenus
+    { type:'income', desc:'Salaire net', cat:'salaire',    amount:3350 },
+    { type:'income', desc:'Salaire net', cat:'salaire',    amount:3350 },
+    { type:'income', desc:'Remboursement assurance', cat:'salaire', amount:120 },
+    // Logement
+    { type:'expense', desc:'Loyer/Hypothèque',     cat:'hypotheques',    amount:1800 },
+    { type:'expense', desc:'Condo frais',           cat:'frais_condo',    amount:350  },
+    { type:'expense', desc:'Taxes municipales',     cat:'taxes',          amount:300  },
+    { type:'expense', desc:'Bell Internet',         cat:'bell',           amount:89   },
+    { type:'expense', desc:'Hydro-Québec',          cat:'hydro',          amount:88   },
+    // Transport
+    { type:'expense', desc:'Paiement auto',         cat:'pret_auto',      amount:550  },
+    { type:'expense', desc:'Essence Petro-Canada',  cat:'essence',        amount:75   },
+    { type:'expense', desc:'Essence Shell',         cat:'essence',        amount:68   },
+    { type:'expense', desc:'Entretien voiture',     cat:'entretien_auto', amount:80   },
+    // Alimentation
+    { type:'expense', desc:'IGA épicerie',          cat:'bouffe',         amount:185  },
+    { type:'expense', desc:'Metro épicerie',        cat:'bouffe',         amount:162  },
+    { type:'expense', desc:'Maxi',                  cat:'bouffe',         amount:143  },
+    { type:'expense', desc:'Restaurant sushi',      cat:'bouffe',         amount:67   },
+    { type:'expense', desc:'Tim Hortons',           cat:'bouffe',         amount:28   },
+    // Assurances
+    { type:'expense', desc:'Assurance habitation',  cat:'assurances',     amount:95   },
+    { type:'expense', desc:'Assurance auto',        cat:'assurances',     amount:75   },
+    { type:'expense', desc:'Assurance vie',         cat:'ass_vie',        amount:160  },
+    // Autres
+    { type:'expense', desc:'Entretien maison',      cat:'maintenance',    amount:100  },
+    { type:'expense', desc:'Amazon achat',          cat:'autres_dep',     amount:45   },
+    { type:'expense', desc:'Pharmacie Jean Coutu',  cat:'autres_dep',     amount:32   },
+  ];
+
+  let idCounter = 1000;
+  for(let m = 0; m < 3; m++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - m, 1);
+    const yr = d.getFullYear(), mo = d.getMonth();
+    const daysInMonth = new Date(yr, mo + 1, 0).getDate();
+
+    demoData.forEach((tx, i) => {
+      const day = Math.min(1 + Math.floor(i * daysInMonth / demoData.length) + Math.floor(Math.random()*3), daysInMonth);
+      const dateStr = `${yr}-${String(mo+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      // Small variation ±5%
+      const variation = 1 + (Math.random() * 0.10 - 0.05);
+      const amount = Math.round(tx.amount * (m === 0 ? 1 : variation) * 100) / 100;
+      txs.push({ id: 'demo_' + (idCounter++), type: tx.type, desc: tx.desc, cat: tx.cat, amount, date: dateStr });
+    });
+  }
+  txs.sort((a, b) => b.date.localeCompare(a.date));
+
+  // Show banner
+  const banner = document.getElementById('demoBanner');
+  if(banner) banner.style.display = 'flex';
+
+  showApp(currentUser);
+  renderOverview();
+
+  // Update banner i18n
+  const bl = document.getElementById('demoBannerLabel');
+  const be = document.getElementById('demoBannerExit');
+  if(bl) bl.textContent = t.demoMode || 'MODE DÉMO — données fictives';
+  if(be) be.textContent = t.demoExit || 'Quitter';
+
+  toast(LANG==='fr' ? '🧪 Mode démo activé' : '🧪 Demo mode active', 'science');
+}
+
+function exitDemoMode() {
+  _demoMode = false;
+  document.body.classList.remove('demo-mode');
+  const banner = document.getElementById('demoBanner');
+  if(banner) banner.style.display = 'none';
+  currentUser = null;
+  txs = [];
+  showAuthScreen();
+}
+
+// ── Patch saveTx / deleteTxRemote / saveSettings / loadSettings for demo mode ─
+const _origSaveTx = saveTx;
+saveTx = async function(tx) {
+  if(_demoMode) return; // no-op in demo
+  return _origSaveTx(tx);
+};
+
+const _origDeleteTxRemote = deleteTxRemote;
+deleteTxRemote = async function(id) {
+  if(_demoMode) return;
+  return _origDeleteTxRemote(id);
+};
+
+const _origSaveSettings = saveSettings;
+saveSettings = async function() {
+  if(_demoMode) {
+    // In demo: just flush DOM to memory + re-render, no DB
+    flushDOMToMemory();
+    toast(t.settingsSaved, 'check_circle');
+    showView('overview');
+    return;
+  }
+  return _origSaveSettings();
+};
+
+const _origLoadSettings = loadSettings;
+loadSettings = async function() {
+  if(_demoMode) return; // keep current demo state
+  return _origLoadSettings();
+};
+
+const _origSignOut = signOut;
+signOut = async function() {
+  if(_demoMode) { exitDemoMode(); return; }
+  return _origSignOut();
+};
+
 // ── CAT DETAIL MODAL ──────────────────────────────────────────────────────────
 function openCatModal(catId) {
   const cat   = getCat(catId);
@@ -2742,7 +2969,7 @@ function applyI18n() {
   const fv = document.getElementById('footerVersion');
   const fc = document.getElementById('footerCopy');
   const d  = LANG==='fr' ? '01 Mar 2026' : 'Mar 01, 2026';
-  if(fv) fv.textContent = 'v1.260301.17 · ' + t.updatedOn + ' ' + d;
+  if(fv) fv.textContent = 'v1.260301.20 · ' + t.updatedOn + ' ' + d;
   if(fc) fc.textContent = '© 2026 Budget 2026 · ' + t.allRights;
   // Set topbar title to current view
   const ttEl = document.getElementById('topbarTitle');
@@ -2767,6 +2994,15 @@ function applyI18n() {
   if(sti) sti.textContent = isDark ? 'dark_mode' : 'light_mode';
   if(stl) stl.textContent = isDark ? t.darkMode : t.lightMode;
   if(ati) ati.textContent = isDark ? 'dark_mode' : 'light_mode';
+  // Demo labels
+  const dbl = document.getElementById('authDemoLabel');
+  const dsp = document.getElementById('authDemoSepLabel');
+  const dbn = document.getElementById('demoBannerLabel');
+  const dbe = document.getElementById('demoBannerExit');
+  if(dbl) dbl.textContent = t.demoBtn  || 'Mode démo — sans connexion';
+  if(dsp) dsp.textContent = t.demoSep  || 'ou';
+  if(dbn) dbn.textContent = t.demoMode || 'MODE DÉMO — données fictives';
+  if(dbe) dbe.textContent = t.demoExit || 'Quitter';
   // Export/Import labels
   const ebl = document.getElementById('exportBtnLabel');
   const ibl = document.getElementById('importBtnLabel');
@@ -2801,14 +3037,55 @@ function setLang(lang) {
 }
 
 const titles = { overview:t.overview, add:t.add, history:t.history, settings:t.settings };
+let _topbarExpanded = false;
+
+function toggleTopbarIcons() {
+  _topbarExpanded = !_topbarExpanded;
+  const wrap = document.getElementById('topbarIconsWrap');
+  const icon = document.getElementById('topbarExpandIcon');
+  if(wrap) wrap.classList.toggle('expanded', _topbarExpanded);
+  if(icon) icon.textContent = _topbarExpanded ? 'close' : 'more_horiz';
+  // Auto-close when clicking away
+  if(_topbarExpanded) {
+    setTimeout(() => {
+      document.addEventListener('click', _autoCollapseTopbar, { once: true });
+    }, 10);
+  }
+}
+
+function _autoCollapseTopbar(e) {
+  const wrap = document.getElementById('topbarIconsWrap');
+  const btn  = document.getElementById('topbarExpandBtn');
+  if(wrap && !wrap.contains(e.target) && btn && !btn.contains(e.target)) {
+    _topbarExpanded = false;
+    wrap.classList.remove('expanded');
+    const icon = document.getElementById('topbarExpandIcon');
+    if(icon) icon.textContent = 'more_horiz';
+  }
+}
+
 function showView(id){
   closeSidebar();
+  // Auto-collapse topbar icons when navigating
+  _topbarExpanded = false;
+  const wrapEl = document.getElementById('topbarIconsWrap');
+  if(wrapEl) wrapEl.classList.remove('expanded');
+  const expIcon = document.getElementById('topbarExpandIcon');
+  if(expIcon) expIcon.textContent = 'more_horiz';
+
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   const nb=document.getElementById('nav-'+id); if(nb) nb.classList.add('active');
-  document.getElementById('topbarTitle').textContent=titles[id];
-  const isOv=(id==='overview');
+
+  const titleEl = document.getElementById('topbarTitle');
+  const isOv = (id==='overview');
+  // On mobile, hide title when on overview (month nav is enough context)
+  if(titleEl) {
+    titleEl.textContent = titles[id];
+    titleEl.classList.toggle('is-overview', isOv);
+  }
+
   document.getElementById('monthNavWrap').style.display=isOv?'flex':'none';
   document.getElementById('mnToday').style.display=isOv?'':'none';
   if(id==='overview') renderOverview();
@@ -3188,6 +3465,31 @@ async function init(){
   // ── Show auth screen immediately, load data in background ──
   // This avoids blocking on Supabase network calls
   hideOverlay(); // Hide overlay right away
+
+  // ── Detect Claude/iframe environment → auto-show demo button ──────────────
+  const isEmbedded = (() => {
+    try {
+      // In Claude artifact: window !== window.top (inside iframe)
+      if(window !== window.top) return true;
+      // Also check if origin looks like Claude
+      const host = window.location.hostname;
+      if(host.includes('claude.ai') || host.includes('anthropic') || host === '') return true;
+      return false;
+    } catch(e) {
+      // Cross-origin iframe throws on window.top access → definitely embedded
+      return true;
+    }
+  })();
+
+  if(isEmbedded) {
+    const btn = document.getElementById('authDemoBtn');
+    const sep = document.getElementById('authDemoSep');
+    if(btn) btn.style.display = 'flex';
+    if(sep) sep.style.display = 'flex';
+    // Auto-enter demo mode directly (no auth screen needed in Claude)
+    enterDemoMode();
+    return; // skip Supabase session check
+  }
 
   // Check session
   try {
