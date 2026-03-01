@@ -196,6 +196,9 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
     justify-content: flex-start; padding: 0 12px; gap: 10px;
     font-size: 13px; font-weight: 600;
   }
+  .topbar-icons-wrap .user-avatar img {
+    width: 26px; height: 26px; border-radius: 50%; object-fit: cover; flex-shrink: 0;
+  }
 }
 .topbar-center { display:flex; align-items:center; justify-content:center; gap:2px; }
 .topbar-right { display:flex; align-items:center; justify-content:flex-end; gap:0; }
@@ -1817,7 +1820,7 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
       </div>
 
     <footer class="app-footer">
-        <div class="footer-version" id="footerVersion">v1.260301.47</div>
+        <div class="footer-version" id="footerVersion">v1.260301.49</div>
         <div class="footer-copy" id="footerCopy">© 2026 Budget 2026</div>
     </footer>
     </div>
@@ -4802,7 +4805,7 @@ function applyI18n() {
   const fv = document.getElementById('footerVersion');
   const fc = document.getElementById('footerCopy');
   const d  = LANG==='fr' ? '01 Mar 2026' : 'Mar 01, 2026';
-  if(fv) fv.textContent = 'v1.260301.47 · ' + t.updatedOn + ' ' + d;
+  if(fv) fv.textContent = 'v1.260301.49 · ' + t.updatedOn + ' ' + d;
   if(fc) fc.textContent = '© 2026 Budget 2026 · ' + t.allRights;
   // Set topbar title to current view
   const ttEl = document.getElementById('topbarTitle');
@@ -5401,22 +5404,12 @@ function renderHistory(){
     const cat=getCat(tx.cat);
     const descHtml = highlightMatch(tx.desc, q);
     const catHtml  = highlightMatch(cat.name, q);
-    return `<div class="hist-row-wrap" id="wrap-${tx.id}">
-      <div class="hist-swipe-action">
-        <span class="mi">delete</span>
-        <span>${LANG==='fr'?'Suppr.':'Delete'}</span>
-      </div>
-      <div class="hist-row" onclick="openEditTx('${tx.id}')" style="cursor:pointer"
-        data-id="${tx.id}"
-        ontouchstart="swipeStart(event,this)"
-        ontouchmove="swipeMove(event,this)"
-        ontouchend="swipeEnd(event,this)">
-        <div class="hist-date">${fmtDate(tx.date)}</div>
-        <div class="hist-desc">${descHtml}</div>
-        <div class="hist-cat"><span style="width:7px;height:7px;border-radius:50%;background:${cat.color};display:inline-block;flex-shrink:0"></span>${catHtml}</div>
-        <div class="hist-amt ${tx.type}">${tx.type==='income'?'+':''}${fmt(tx.amount)}</div>
-        <div><span class="mi mi-sm" style="color:var(--label3);font-size:16px">chevron_right</span></div>
-      </div>
+    return `<div class="hist-row" onclick="openEditTx('${tx.id}')" style="cursor:pointer">
+      <div class="hist-date">${fmtDate(tx.date)}</div>
+      <div class="hist-desc">${descHtml}</div>
+      <div class="hist-cat"><span style="width:7px;height:7px;border-radius:50%;background:${cat.color};display:inline-block;flex-shrink:0"></span>${catHtml}</div>
+      <div class="hist-amt ${tx.type}">${tx.type==='income'?'+':''}${fmt(tx.amount)}</div>
+      <div><span class="mi mi-sm" style="color:var(--label3);font-size:16px">chevron_right</span></div>
     </div>`;
   }).join('');
 }
