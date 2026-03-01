@@ -1153,7 +1153,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       </div>
 
     <footer class="app-footer">
-        <div class="footer-version" id="footerVersion">v1.260301.9</div>
+        <div class="footer-version" id="footerVersion">v1.260301.10</div>
         <div class="footer-copy" id="footerCopy">© 2026 Budget 2026</div>
     </footer>
     </div>
@@ -1767,10 +1767,13 @@ async function loadSettings() {
     // Reset CATS to base budgets first (so navigating away from override month restores base)
     if(baseRow && baseRow.category_budgets) {
       const baseBudgets = baseRow.category_budgets;
-      CATS.forEach(c => { if(baseBudgets[c.id] !== undefined) c.budget = parseFloat(baseBudgets[c.id]); });
-      INCOME_TARGET  = parseFloat(baseRow.income_target)  || 6700;
-      BUDGET_TOTAL   = parseFloat(baseRow.expense_budget) || 4428;
-      SAVINGS_TARGET = parseFloat(baseRow.savings_target) || 2272;
+      const validCatIds0 = new Set(CATS.map(c => c.id));
+      CATS.forEach(c => {
+        if(baseBudgets[c.id] !== undefined && validCatIds0.has(c.id))
+          c.budget = parseFloat(baseBudgets[c.id]);
+      });
+      INCOME_TARGET = parseFloat(baseRow.income_target) || 6700;
+      recomputeTotals(); // derive from cats, not stored values
     }
 
     if(baseRow) {
@@ -1805,9 +1808,11 @@ async function loadSettings() {
       CATS.forEach(c => {
         if(catBudgets[c.id] !== undefined) c.budget = parseFloat(catBudgets[c.id]);
       });
-      INCOME_TARGET  = userSettings.income_target;
-      BUDGET_TOTAL   = userSettings.expense_budget;
-      SAVINGS_TARGET = userSettings.savings_target;
+      INCOME_TARGET = userSettings.income_target;
+      // Always recompute from cats — never trust stored expense_budget/savings_target
+      recomputeTotals();
+      userSettings.expense_budget = BUDGET_TOTAL;
+      userSettings.savings_target = SAVINGS_TARGET;
     } else {
       // Brand new user — apply regional defaults
       const regional = await detectRegionDefaults();
@@ -1826,15 +1831,33 @@ async function loadSettings() {
   }
 }
 
+// ── RECOMPUTE TOTALS FROM CATS (single source of truth) ──────────────────────
+function recomputeTotals() {
+  BUDGET_TOTAL   = CATS.filter(c => c.type === 'expense').reduce((s, c) => s + (c.budget||0), 0);
+  SAVINGS_TARGET = INCOME_TARGET - BUDGET_TOTAL;
+}
+
 // ── FLUSH DOM → MEMORY (sync inputs → CATS/GROUPS arrays) ───────────────────
 function flushDOMToMemory() {
-  // Recalculate before flushing to ensure values are current
-  updateSettingsTotal();
-  // Global targets
+  // Sync income target from DOM
   const si = document.getElementById('s-income');
+  if(si) INCOME_TARGET = parseFloat(si.value) || INCOME_TARGET;
+
+  // Sync per-category name + budget from DOM
+  CATS.forEach(c => {
+    const nameEl   = document.getElementById('s-cat-name-'   + c.id);
+    const budgetEl = document.getElementById('s-cat-budget-' + c.id);
+    if(nameEl)   c.name   = nameEl.value.trim() || c.name;
+    if(budgetEl) c.budget = parseFloat(budgetEl.value) || 0;
+  });
+
+  // Always recompute BUDGET_TOTAL and SAVINGS_TARGET from cats
+  recomputeTotals();
+
+  // Sync group names
+  const si2 = si; // already done
   const se = document.getElementById('s-expense');
   const ss = document.getElementById('s-savings');
-  if(si) INCOME_TARGET  = parseFloat(si.value) || INCOME_TARGET;
   if(se) BUDGET_TOTAL   = parseFloat(se.value) || 0;
   if(ss) SAVINGS_TARGET = parseFloat(ss.value) || 0;
 
@@ -1980,10 +2003,10 @@ async function loadSettingsForMonth(mk) {
       const rawBudgets2 = activeRow.category_budgets || {};
       const validIds2 = new Set(CATS.map(c => c.id));
       const catBudgets = Object.fromEntries(Object.entries(rawBudgets2).filter(([id]) => validIds2.has(id)));
-      INCOME_TARGET  = parseFloat(activeRow.income_target)  || 6700;
-      BUDGET_TOTAL   = parseFloat(activeRow.expense_budget) || 4428;
-      SAVINGS_TARGET = parseFloat(activeRow.savings_target) || 2272;
+      INCOME_TARGET = parseFloat(activeRow.income_target) || 6700;
       CATS.forEach(c => { if(catBudgets[c.id] !== undefined) c.budget = parseFloat(catBudgets[c.id]); });
+      // Recompute from cats
+      recomputeTotals();
 
       // Refresh form inputs
       const si = document.getElementById('s-income');
@@ -2163,26 +2186,24 @@ function updateGroupTotal(groupId) {
 }
 
 function updateSettingsTotal() {
-  // Sum all category budgets
+  // Sum expense cat budgets from DOM inputs (or memory)
   const totalCats = CATS.filter(c => c.type === 'expense').reduce((sum, c) => {
     const el = document.getElementById('s-cat-budget-' + c.id);
     return sum + (el ? parseFloat(el.value) || 0 : c.budget);
   }, 0);
 
-  // Budget dépenses = somme catégories
-  const expEl = document.getElementById('s-expense');
-  if(expEl) expEl.value = totalCats;
+  const income = parseFloat(document.getElementById('s-income')?.value) || INCOME_TARGET;
+  const savings = income - totalCats;
 
-  // Épargne = revenus - dépenses
-  const income = parseFloat(document.getElementById('s-income')?.value) || 0;
+  // Update global vars — single source of truth
+  BUDGET_TOTAL   = totalCats;
+  SAVINGS_TARGET = savings;
+
+  // Update readonly display inputs
+  const expEl = document.getElementById('s-expense');
   const savEl = document.getElementById('s-savings');
-  if(savEl) {
-    const savings = income - totalCats;
-    savEl.value = savings;
-    // Color feedback
-    savEl.style.color = savings >= 0 ? 'var(--green)' : 'var(--red)';
-  }
-  if(expEl) expEl.style.color = 'var(--label)';
+  if(expEl) { expEl.value = totalCats; expEl.style.color = 'var(--label)'; }
+  if(savEl) { savEl.value = savings; savEl.style.color = savings >= 0 ? 'var(--green)' : 'var(--red)'; }
 }
 
 // ── DELETE CAT / GROUP ────────────────────────────────────────────────────────
@@ -2407,7 +2428,7 @@ function applyI18n() {
   const fv = document.getElementById('footerVersion');
   const fc = document.getElementById('footerCopy');
   const d  = LANG==='fr' ? '01 Mar 2026' : 'Mar 01, 2026';
-  if(fv) fv.textContent = 'v1.260301.9 · ' + t.updatedOn + ' ' + d;
+  if(fv) fv.textContent = 'v1.260301.10 · ' + t.updatedOn + ' ' + d;
   if(fc) fc.textContent = '© 2026 Budget 2026 · ' + t.allRights;
   // Set topbar title to current view
   const ttEl = document.getElementById('topbarTitle');
