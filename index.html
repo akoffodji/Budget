@@ -605,6 +605,63 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
   margin-top: 2px;
 }
 
+
+/* ── AUTH TOP CONTROLS ── */
+.auth-controls {
+  position: absolute; top: calc(16px + env(safe-area-inset-top,0px));
+  right: 16px; display: flex; align-items: center; gap: 8px;
+}
+.auth-ctrl-btn {
+  height: 34px; padding: 0 12px; border-radius: 100px;
+  border: 1.5px solid var(--sep); background: var(--bg2);
+  color: var(--label2); font-family: inherit; font-size: 13px;
+  font-weight: 600; cursor: pointer; display: flex; align-items: center;
+  gap: 6px; transition: background .15s, border-color .15s;
+}
+.auth-ctrl-btn:hover { background: var(--fill3); border-color: var(--blue); color: var(--blue); }
+.auth-ctrl-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+/* ── SIDEBAR BOTTOM CONTROLS ── */
+.sidebar-bottom {
+  padding: 12px 8px;
+  border-top: 1px solid var(--sep2);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.sidebar-ctrl-row {
+  display: flex; align-items: center; gap: 8px; padding: 0 4px;
+}
+.sidebar-ctrl-label {
+  font-size: 11px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--label3); padding: 6px 8px 2px;
+}
+.lang-toggle {
+  display: flex; background: var(--fill3); border-radius: 100px;
+  padding: 3px; gap: 2px; flex: 1;
+}
+.lang-btn {
+  flex: 1; padding: 6px 0; border: none; border-radius: 100px;
+  background: none; font-family: inherit; font-size: 13px; font-weight: 600;
+  color: var(--label3); cursor: pointer; transition: background .15s, color .15s;
+}
+.lang-btn.active { background: var(--bg2); color: var(--blue); box-shadow: var(--shadow-sm); }
+.theme-toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 8px;
+}
+.theme-toggle-label { font-size: 13px; color: var(--label2); font-weight: 500; display: flex; align-items: center; gap: 8px; }
+.theme-switch {
+  width: 44px; height: 26px; border-radius: 100px;
+  background: var(--sep); border: none; cursor: pointer;
+  position: relative; transition: background .25s; flex-shrink: 0;
+}
+.theme-switch.on { background: var(--blue); }
+.theme-switch::after {
+  content: ''; position: absolute; width: 20px; height: 20px;
+  border-radius: 50%; background: #fff; top: 3px; left: 3px;
+  transition: transform .25s; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+}
+.theme-switch.on::after { transform: translateX(18px); }
+
 @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 .summary-card,.budget-bar-card,.cat-card,.tx-card,.hist-table { animation:fadeUp .3s ease both; }
 
@@ -618,16 +675,22 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 <body>
 <!-- AUTH SCREEN -->
 <div class="auth-screen" id="authScreen" style="display:none">
+  <!-- Top-right controls -->
+  <div class="auth-controls">
+    <button class="auth-ctrl-btn" id="authLangBtn" onclick="toggleLang()">FR</button>
+    <button class="auth-ctrl-btn" id="authThemeBtn" onclick="toggleTheme()">
+      <span class="mi" id="authThemeIcon" style="font-size:16px">dark_mode</span>
+    </button>
+  </div>
   <div class="auth-card">
     <div class="auth-logo">💰</div>
     <div class="auth-title">Budget 2026</div>
-    <div class="auth-sub">Connectez-vous pour accéder<br>à votre budget personnel</div>
+    <div class="auth-sub" data-i18n="authSub"></div>
 
     <button class="auth-btn auth-btn-google" onclick="signInGoogle()">
       <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-      Continuer avec Google
+      <span data-i18n="authBtn"></span>
     </button>
-
 
     <div class="auth-footer">
       <span data-i18n="authFooter"></span>
@@ -671,6 +734,18 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
         <span class="mi nav-icon">tune</span> <span data-i18n="settings"></span>
       </button>
     </nav>
+    <!-- Sidebar bottom controls -->
+    <div class="sidebar-bottom">
+      <div class="sidebar-ctrl-label" data-i18n="language" id="sidebarLangLabel">Langue</div>
+      <button class="auth-ctrl-btn" id="sidebarLangBtn" onclick="toggleLang()" style="width:100%;justify-content:center;">FR</button>
+      <div class="theme-toggle-row">
+        <div class="theme-toggle-label">
+          <span class="mi" style="font-size:18px" id="sidebarThemeIcon">dark_mode</span>
+          <span id="sidebarThemeLabel">Mode sombre</span>
+        </div>
+        <button class="theme-switch" id="themeSwitchBtn" onclick="toggleTheme()"></button>
+      </div>
+    </div>
   </aside>
 
   <div class="main">
@@ -910,7 +985,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       </div>
 
     <footer class="app-footer">
-        <div class="footer-version">v1.260301.1" id="footerVersion">v1.260301.1</div>
+        <div class="footer-version" id="footerVersion">v1.260301.1</div>
         <div class="footer-copy" id="footerCopy">© 2026 Budget 2026</div>
     </footer>
     </div>
@@ -1009,6 +1084,7 @@ const I18N = {
     installTitle:"Installer Budget 2026",
     incomeLabel:"Revenu", expenseLabel:"Dépense",
     perMonth:"$/mois", perMonthShort:"$/m",
+    language:"Langue", darkMode:"Mode sombre", lightMode:"Mode clair",
   },
   en: {
     overview:"Overview", add:"Add", history:"History", settings:"Goals",
@@ -1046,10 +1122,12 @@ const I18N = {
     installTitle:"Install Budget 2026",
     incomeLabel:"Income", expenseLabel:"Expense",
     perMonth:"$/mo", perMonthShort:"$/mo",
+    language:"Language", darkMode:"Dark mode", lightMode:"Light mode",
   }
 };
-const LANG = (navigator.language||'fr').toLowerCase().startsWith('fr') ? 'fr' : 'en';
-const t = I18N[LANG];
+let LANG = (()=>{ try{ return localStorage.getItem('budget26_lang')||'auto'; }catch(e){return 'auto';} })();
+if(LANG==='auto') LANG = (navigator.language||'fr').toLowerCase().startsWith('fr') ? 'fr' : 'en';
+let t = I18N[LANG];
 document.documentElement.lang = LANG;
 
 let BUDGET_TOTAL=4428, INCOME_TARGET=6700, SAVINGS_TARGET=2272;
@@ -1535,9 +1613,55 @@ function applyI18n() {
   const d  = LANG==='fr' ? '01 Mar 2026' : 'Mar 01, 2026';
   if(fv) fv.textContent = 'v1.260301.1 · ' + t.updatedOn + ' ' + d;
   if(fc) fc.textContent = '© 2026 Budget 2026 · ' + t.allRights;
-  // Set topbar title if empty
+  // Set topbar title to current view
   const ttEl = document.getElementById('topbarTitle');
-  if(ttEl && !ttEl.textContent.trim()) ttEl.textContent = t.overview;
+  if(ttEl) {
+    const curView = document.querySelector('.view.active');
+    const curId = curView ? curView.id.replace('view-','') : 'overview';
+    ttEl.textContent = titles ? titles[curId] || t.overview : t.overview;
+  }
+  // Update single lang toggle buttons
+  const nextLang = LANG === 'fr' ? 'EN' : 'FR';
+  const ab = document.getElementById('authLangBtn');
+  const sb = document.getElementById('sidebarLangBtn');
+  if(ab) ab.textContent = nextLang;
+  if(sb) sb.textContent = nextLang;
+  // Update theme switch
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const tsb = document.getElementById('themeSwitchBtn');
+  const sti = document.getElementById('sidebarThemeIcon');
+  const stl = document.getElementById('sidebarThemeLabel');
+  const ati = document.getElementById('authThemeIcon');
+  if(tsb) tsb.classList.toggle('on', isDark);
+  if(sti) sti.textContent = isDark ? 'dark_mode' : 'light_mode';
+  if(stl) stl.textContent = isDark ? t.darkMode : t.lightMode;
+  if(ati) ati.textContent = isDark ? 'dark_mode' : 'light_mode';
+  // Sidebar lang label
+  const sll = document.getElementById('sidebarLangLabel');
+  if(sll) sll.textContent = t.language;
+}
+
+function toggleLang() {
+  setLang(LANG === 'fr' ? 'en' : 'fr');
+}
+
+function setLang(lang) {
+  LANG = lang;
+  t = I18N[LANG];
+  document.documentElement.lang = LANG;
+  try { localStorage.setItem('budget26_lang', LANG); } catch(e) {}
+  // Re-render titles map
+  titles.overview = t.overview; titles.add = t.add;
+  titles.history  = t.history;  titles.settings = t.settings;
+  applyI18n();
+  // Re-render current view content
+  const curView = document.querySelector('.view.active');
+  if(curView) {
+    const id = curView.id.replace('view-','');
+    if(id==='overview')  renderOverview();
+    if(id==='history')   renderHistory();
+    if(id==='settings')  renderSettingsView();
+  }
 }
 
 const titles = { overview:t.overview, add:t.add, history:t.history, settings:t.settings };
@@ -1579,8 +1703,8 @@ function changeMonth(d){ viewMonth+=d; if(viewMonth>11){viewMonth=0;viewYear++;}
 function goToday(){ const n=new Date(); viewYear=n.getFullYear(); viewMonth=n.getMonth(); updateMonthNav(); renderOverview(); }
 
 function getSystemTheme(){ return window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'; }
-function applyTheme(t){ document.documentElement.setAttribute('data-theme',t); document.getElementById('themeIcon').textContent=t==='dark'?'light_mode':'dark_mode'; }
-function toggleTheme(){ const cur=document.documentElement.getAttribute('data-theme')||getSystemTheme(); const next=cur==='dark'?'light':'dark'; applyTheme(next); try{localStorage.setItem('budget26_theme',next);}catch(e){} }
+function applyTheme(theme){ document.documentElement.setAttribute('data-theme',theme); const ti=document.getElementById('themeIcon'); if(ti) ti.textContent=theme==='dark'?'light_mode':'dark_mode'; }
+function toggleTheme(){ const cur=document.documentElement.getAttribute('data-theme')||getSystemTheme(); const next=cur==='dark'?'light':'dark'; applyTheme(next); try{localStorage.setItem('budget26_theme',next);}catch(e){} applyI18n(); }
 function initTheme(){ let s=null; try{s=localStorage.getItem('budget26_theme');}catch(e){} applyTheme(s||getSystemTheme()); }
 
 function pickType(t){
