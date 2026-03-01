@@ -1104,7 +1104,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       </div>
 
     <footer class="app-footer">
-        <div class="footer-version" id="footerVersion">v1.260301.1</div>
+        <div class="footer-version" id="footerVersion">v1.260301.2</div>
         <div class="footer-copy" id="footerCopy">© 2026 Budget 2026</div>
     </footer>
     </div>
@@ -1580,17 +1580,42 @@ async function signInGoogle() {
 
 
 async function signOut() {
-  closeUserMenu();
-  await supa.auth.signOut();
-  currentUser = null;
-  txs = [];
-  showAuthScreen();
+  try {
+    // Close menu first
+    document.getElementById('userMenu').classList.remove('open');
+
+    // Sign out from Supabase
+    await supa.auth.signOut();
+  } catch(e) {
+    console.warn('signOut error', e);
+  } finally {
+    // Always reset local state regardless of API result
+    currentUser = null;
+    txs = [];
+    userSettings = { income_target:6700, expense_budget:4428, savings_target:2272, category_budgets:{} };
+    showAuthScreen();
+  }
 }
 
 function showAuthScreen() {
-  document.getElementById('authScreen').style.display = 'flex';
-  document.getElementById('userAvatarBtn').style.display = 'none';
+  // Hide app
   document.querySelector('.app').style.visibility = 'hidden';
+  // Hide avatar
+  const avatarBtn = document.getElementById('userAvatarBtn');
+  if(avatarBtn) avatarBtn.style.display = 'none';
+  // Close any open menus/modals
+  document.getElementById('userMenu')?.classList.remove('open');
+  document.getElementById('editTxOverlay')?.classList.remove('open');
+  document.getElementById('addCatModal')?.classList.remove('open');
+  document.getElementById('addGroupModal')?.classList.remove('open');
+  // Show auth screen
+  document.getElementById('authScreen').style.display = 'flex';
+  // Update theme icon on auth screen
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const ati = document.getElementById('authThemeIcon');
+  if(ati) ati.textContent = isDark ? 'light_mode' : 'dark_mode';
+  // Apply i18n
+  applyI18n();
 }
 
 function showApp(user) {
@@ -2210,7 +2235,7 @@ function applyI18n() {
   const fv = document.getElementById('footerVersion');
   const fc = document.getElementById('footerCopy');
   const d  = LANG==='fr' ? '01 Mar 2026' : 'Mar 01, 2026';
-  if(fv) fv.textContent = 'v1.260301.1 · ' + t.updatedOn + ' ' + d;
+  if(fv) fv.textContent = 'v1.260301.2 · ' + t.updatedOn + ' ' + d;
   if(fc) fc.textContent = '© 2026 Budget 2026 · ' + t.allRights;
   // Set topbar title to current view
   const ttEl = document.getElementById('topbarTitle');
