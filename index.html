@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -867,7 +867,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
             </div>
             <div class="summary-label" data-i18n="incomeCard"></div>
             <div class="summary-value" id="ov-income">0 $</div>
-            <div class="summary-sub"><span data-i18n="target"></span> <strong>6 700 $</strong></div>
+            <div class="summary-sub"><span data-i18n="target"></span> <strong id="ov-income-target">6 700 $</strong></div>
           </div>
           <div class="summary-card expense">
             <div class="summary-icon-row">
@@ -876,7 +876,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
             </div>
             <div class="summary-label" data-i18n="expenseCard"></div>
             <div class="summary-value" id="ov-expense">0 $</div>
-            <div class="summary-sub"><span data-i18n="target"></span> <strong>4 428 $</strong></div>
+            <div class="summary-sub"><span data-i18n="target"></span> <strong id="ov-expense-target">4 428 $</strong></div>
           </div>
           <div class="summary-card savings">
             <div class="summary-icon-row">
@@ -884,7 +884,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
             </div>
             <div class="summary-label" data-i18n="savingsCard"></div>
             <div class="summary-value" id="ov-savings">0 $</div>
-            <div class="summary-sub"><span data-i18n="target"></span> <strong>2 272 $</strong></div>
+            <div class="summary-sub"><span data-i18n="target"></span> <strong id="ov-savings-target">2 272 $</strong></div>
           </div>
         </div>
 
@@ -897,7 +897,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
           <div class="bar-labels">
             <span>0 $</span>
             <span id="ov-bar-pct" style="font-weight:600;color:var(--green)">0%</span>
-            <span>4 428 $</span>
+            <span id="ov-bar-max">4 428 $</span>
           </div>
         </div>
 
@@ -1263,6 +1263,131 @@ document.documentElement.lang = LANG;
 
 let BUDGET_TOTAL=4428, INCOME_TARGET=6700, SAVINGS_TARGET=2272;
 // userSettings holds all configurable values loaded from Supabase
+// ── GEO-BASED DEFAULT BUDGETS ────────────────────────────────────────────────
+// Defaults by country/region (monthly, local currency converted to CAD approx)
+const REGIONAL_DEFAULTS = {
+  // Canada
+  CA_QC: { // Québec
+    income:6700,
+    cats:{ hypotheques:1800, frais_condo:350, taxes:300, bell:180, hydro:88,
+           pret_auto:550, essence:150, entretien_auto:80,
+           bouffe:700, assurances:170, ass_vie:160, maintenance:100, autres_dep:100 }
+  },
+  CA_ON: { // Ontario
+    income:7500,
+    cats:{ hypotheques:2200, frais_condo:450, taxes:350, bell:160, hydro:120,
+           pret_auto:600, essence:180, entretien_auto:100,
+           bouffe:800, assurances:200, ass_vie:180, maintenance:120, autres_dep:150 }
+  },
+  CA_BC: { // Colombie-Britannique
+    income:7800,
+    cats:{ hypotheques:2500, frais_condo:500, taxes:400, bell:160, hydro:100,
+           pret_auto:600, essence:200, entretien_auto:100,
+           bouffe:800, assurances:200, ass_vie:180, maintenance:120, autres_dep:150 }
+  },
+  CA: { // Canada (default)
+    income:7000,
+    cats:{ hypotheques:2000, frais_condo:400, taxes:320, bell:170, hydro:100,
+           pret_auto:570, essence:160, entretien_auto:90,
+           bouffe:750, assurances:180, ass_vie:170, maintenance:110, autres_dep:120 }
+  },
+  // USA
+  US_NY: {
+    income:9000,
+    cats:{ hypotheques:3000, frais_condo:600, taxes:500, bell:150, hydro:150,
+           pret_auto:700, essence:200, entretien_auto:120,
+           bouffe:900, assurances:250, ass_vie:200, maintenance:150, autres_dep:200 }
+  },
+  US_CA: {
+    income:9500,
+    cats:{ hypotheques:3200, frais_condo:650, taxes:550, bell:150, hydro:130,
+           pret_auto:700, essence:250, entretien_auto:130,
+           bouffe:900, assurances:260, ass_vie:200, maintenance:160, autres_dep:200 }
+  },
+  US_TX: {
+    income:7500,
+    cats:{ hypotheques:2000, frais_condo:400, taxes:350, bell:130, hydro:180,
+           pret_auto:650, essence:200, entretien_auto:100,
+           bouffe:750, assurances:200, ass_vie:170, maintenance:120, autres_dep:150 }
+  },
+  US: { // USA default
+    income:8000,
+    cats:{ hypotheques:2400, frais_condo:450, taxes:420, bell:140, hydro:140,
+           pret_auto:650, essence:200, entretien_auto:110,
+           bouffe:800, assurances:220, ass_vie:185, maintenance:130, autres_dep:160 }
+  },
+  // Europe
+  FR: { // France
+    income:3500,
+    cats:{ hypotheques:900, frais_condo:150, taxes:120, bell:30, hydro:80,
+           pret_auto:300, essence:150, entretien_auto:60,
+           bouffe:400, assurances:100, ass_vie:80, maintenance:60, autres_dep:80 }
+  },
+  BE: { // Belgique
+    income:3200,
+    cats:{ hypotheques:850, frais_condo:120, taxes:100, bell:40, hydro:100,
+           pret_auto:280, essence:150, entretien_auto:60,
+           bouffe:380, assurances:100, ass_vie:80, maintenance:60, autres_dep:80 }
+  },
+  CH: { // Suisse
+    income:7000,
+    cats:{ hypotheques:2000, frais_condo:300, taxes:400, bell:80, hydro:100,
+           pret_auto:600, essence:200, entretien_auto:100,
+           bouffe:800, assurances:300, ass_vie:200, maintenance:100, autres_dep:150 }
+  },
+  GB: { // UK
+    income:4500,
+    cats:{ hypotheques:1400, frais_condo:200, taxes:200, bell:50, hydro:120,
+           pret_auto:350, essence:180, entretien_auto:80,
+           bouffe:500, assurances:150, ass_vie:100, maintenance:80, autres_dep:100 }
+  },
+  DE: { // Allemagne
+    income:4000,
+    cats:{ hypotheques:1000, frais_condo:150, taxes:150, bell:40, hydro:100,
+           pret_auto:350, essence:160, entretien_auto:70,
+           bouffe:450, assurances:130, ass_vie:100, maintenance:70, autres_dep:90 }
+  },
+  // Other
+  AU: { // Australie
+    income:7000,
+    cats:{ hypotheques:2200, frais_condo:400, taxes:300, bell:80, hydro:120,
+           pret_auto:550, essence:180, entretien_auto:100,
+           bouffe:750, assurances:200, ass_vie:160, maintenance:100, autres_dep:150 }
+  },
+  DEFAULT: {
+    income:5000,
+    cats:{ hypotheques:1500, frais_condo:250, taxes:200, bell:100, hydro:80,
+           pret_auto:400, essence:120, entretien_auto:60,
+           bouffe:500, assurances:120, ass_vie:100, maintenance:80, autres_dep:80 }
+  }
+};
+
+async function detectRegionDefaults() {
+  try {
+    // Use ipapi.co — free, no key needed, returns country + region
+    const r = await Promise.race([
+      fetch('https://ipapi.co/json/'),
+      new Promise((_,rej) => setTimeout(() => rej(new Error('timeout')), 4000))
+    ]);
+    const d = await r.json();
+    const country = (d.country_code || '').toUpperCase();
+    const region  = (d.region_code  || '').toUpperCase();
+
+    // Try country+region first, then country, then default
+    const key = REGIONAL_DEFAULTS[`${country}_${region}`]
+              ? `${country}_${region}`
+              : REGIONAL_DEFAULTS[country]
+              ? country
+              : 'DEFAULT';
+
+    console.log(`Region detected: ${country}_${region} → using ${key}`);
+    return REGIONAL_DEFAULTS[key];
+  } catch(e) {
+    console.warn('Region detection failed, using DEFAULT', e);
+    return REGIONAL_DEFAULTS.DEFAULT;
+  }
+}
+
 let userSettings = { income_target:6700, expense_budget:4428, savings_target:2272, category_budgets:{} };
 
 const CATS = [
@@ -1443,10 +1568,26 @@ async function loadSettings() {
       INCOME_TARGET  = userSettings.income_target;
       SAVINGS_TARGET = userSettings.savings_target;
     }
-    // If no row, keep defaults — no error
+    // New user — no settings row yet → apply regional defaults
+    if(!data) {
+      const regional = await detectRegionDefaults();
+      INCOME_TARGET  = regional.income;
+      BUDGET_TOTAL   = Object.values(regional.cats).reduce((s,v)=>s+v, 0);
+      SAVINGS_TARGET = INCOME_TARGET - BUDGET_TOTAL;
+      // Apply to CATS
+      CATS.forEach(c => {
+        if(regional.cats[c.id] !== undefined) c.budget = regional.cats[c.id];
+      });
+      userSettings = {
+        income_target:  INCOME_TARGET,
+        expense_budget: BUDGET_TOTAL,
+        savings_target: SAVINGS_TARGET,
+        category_budgets: regional.cats
+      };
+      console.log('Regional defaults applied:', regional);
+    }
   } catch(e) {
     console.error('Settings load failed:', e);
-    // Use defaults silently — app still works
   }
 }
 
@@ -2103,6 +2244,15 @@ function renderOverview(){
   bar.style.width=pct+'%';
   bar.className='bar-inner '+(pct<70?'bar-safe':pct<90?'bar-warn':'bar-over');
   document.getElementById('ov-bar-meta').textContent=`${fmt(expense)} / ${fmt(BUDGET_TOTAL)}`;
+  // Update target labels from current settings
+  const it = document.getElementById('ov-income-target');
+  const et = document.getElementById('ov-expense-target');
+  const st = document.getElementById('ov-savings-target');
+  const bm = document.getElementById('ov-bar-max');
+  if(it) it.textContent = fmt(INCOME_TARGET);
+  if(et) et.textContent = fmt(BUDGET_TOTAL);
+  if(st) st.textContent = fmt(SAVINGS_TARGET);
+  if(bm) bm.textContent = fmt(BUDGET_TOTAL);
   const pctEl=document.getElementById('ov-bar-pct');
   pctEl.textContent=pct.toFixed(0)+'%';
   pctEl.style.color=pct<70?'var(--green)':pct<90?'var(--orange)':'var(--red)';
