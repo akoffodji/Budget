@@ -1153,7 +1153,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       </div>
 
     <footer class="app-footer">
-        <div class="footer-version" id="footerVersion">v1.260301.12</div>
+        <div class="footer-version" id="footerVersion">v1.260301.13</div>
         <div class="footer-copy" id="footerCopy">© 2026 Budget 2026</div>
     </footer>
     </div>
@@ -1891,8 +1891,15 @@ async function saveSettings() {
     const applyToMonth = _monthScopeOn;
     const mk = (applyToMonth && _selectedMonth) ? _selectedMonth : null;
 
+    // ALWAYS save base row (structure: custom cats/groups/names)
+    // This ensures new groups/cats are persisted regardless of month scope
+    const basePayload = buildSettingsPayload(null);
+    const { error: e1 } = await supa.from('settings').upsert(basePayload,
+      { onConflict: 'user_id,month_key' });
+    if(e1) throw e1;
+
     if(mk) {
-      // Month-specific save: ONLY write the month row, do NOT touch base row
+      // Additionally save a month-specific row for budgets/targets
       const monthPayload = buildSettingsPayload(mk);
       const { error: e2 } = await supa.from('settings').upsert(monthPayload,
         { onConflict: 'user_id,month_key' });
@@ -1903,11 +1910,6 @@ async function saveSettings() {
         has_month_override: true
       };
     } else {
-      // Base save: write base row (structure + default budgets)
-      const basePayload = buildSettingsPayload(null);
-      const { error: e1 } = await supa.from('settings').upsert(basePayload,
-        { onConflict: 'user_id,month_key' });
-      if(e1) throw e1;
       userSettings = {
         income_target: INCOME_TARGET, expense_budget: BUDGET_TOTAL,
         savings_target: SAVINGS_TARGET, category_budgets: basePayload.category_budgets,
@@ -2400,7 +2402,7 @@ function applyI18n() {
   const fv = document.getElementById('footerVersion');
   const fc = document.getElementById('footerCopy');
   const d  = LANG==='fr' ? '01 Mar 2026' : 'Mar 01, 2026';
-  if(fv) fv.textContent = 'v1.260301.12 · ' + t.updatedOn + ' ' + d;
+  if(fv) fv.textContent = 'v1.260301.13 · ' + t.updatedOn + ' ' + d;
   if(fc) fc.textContent = '© 2026 Budget 2026 · ' + t.allRights;
   // Set topbar title to current view
   const ttEl = document.getElementById('topbarTitle');
