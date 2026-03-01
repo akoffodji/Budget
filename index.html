@@ -380,8 +380,44 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 .seg-btn.active { background:var(--bg2); color:var(--label); box-shadow:var(--shadow-sm); }
 .hist-table { background:var(--bg2); border-radius:var(--radius-xl); overflow:hidden; box-shadow:var(--shadow-sm); }
 .hist-thead { display:grid; grid-template-columns:80px 1fr 140px 110px 36px; padding:10px 16px; background:var(--fill4); border-bottom:1px solid var(--sep2); font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--label3); }
-.hist-row { display:grid; grid-template-columns:80px 1fr 140px 110px 36px; padding:12px 16px; border-bottom:1px solid var(--sep2); align-items:center; font-size:13px; transition:background .1s; }
-.hist-row:last-child { border-bottom:none; }
+
+/* ── SWIPE TO DELETE ── */
+.hist-row-wrap {
+  position: relative; overflow: hidden;
+  border-bottom: 1px solid var(--sep2);
+}
+.hist-row-wrap:last-child { border-bottom: none; }
+.hist-row-wrap .hist-row {
+  border-bottom: none;
+  transform: translateX(0);
+  transition: transform .25s cubic-bezier(.4,0,.2,1);
+  position: relative; z-index: 1; background: var(--bg2);
+  will-change: transform;
+}
+.hist-row-wrap .hist-row:hover { background: var(--fill4); }
+/* Delete reveal behind the row */
+.hist-swipe-action {
+  position: absolute; right: 0; top: 0; bottom: 0;
+  width: 80px; background: var(--red);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 4px; color: #fff;
+  font-size: 11px; font-weight: 700;
+  border-radius: 0;
+}
+.hist-swipe-action .mi { font-size: 22px; }
+/* Confirmed delete — flash red */
+.hist-row-wrap.deleting .hist-row {
+  transform: translateX(100%) !important;
+  opacity: 0;
+  transition: transform .3s ease, opacity .2s ease;
+}
+.hist-row-wrap.deleting {
+  max-height: 0 !important; overflow: hidden;
+  transition: max-height .35s ease .25s;
+}
+
+.hist-row { display:grid; grid-template-columns:80px 1fr 140px 110px 36px; padding:12px 16px; align-items:center; font-size:13px; transition:background .1s, transform .25s cubic-bezier(.4,0,.2,1); }
+
 .hist-row:hover { background:var(--fill4); }
 .hist-date { color:var(--label3); font-size:12px; }
 .hist-desc { font-weight:500; }
@@ -1120,6 +1156,8 @@ input[type="date"].recur-end-input { width: auto; flex: 1; text-align: left; }
 }
 .hist-action-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
 .hist-action-btn.import { border-color: var(--orange); color: var(--orange); }
+.hist-action-btn.pdf-btn { border-color: #d93025; color: #d93025; }
+.hist-action-btn.pdf-btn:hover { background: rgba(217,48,37,.08); border-color: #d93025; color: #d93025; }
 .hist-action-btn.import:hover { background: rgba(242,153,0,.08); }
 
 /* Import result banner */
@@ -1296,6 +1334,8 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
   .md-row{grid-template-columns:1fr}
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 <!-- AUTH SCREEN -->
@@ -1652,6 +1692,24 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
 
           <!-- TRANSACTIONS PANEL -->
           <div id="histTxPanel">
+            <!-- Search bar — MD style -->
+            <div class="md-field with-icon hist-search-field" id="histSearchField">
+              <span class="mi md-field-icon">search</span>
+              <input type="text" id="histSearchInput" placeholder=" "
+                oninput="onHistSearch(this.value)"
+                autocomplete="off" autocorrect="off" spellcheck="false">
+              <label class="md-field-label" id="histSearchLabel">Rechercher…</label>
+              <div class="md-field-underline"></div>
+              <!-- Clear button inside field -->
+
+            </div>
+            <!-- Result count -->
+            <div class="hist-search-meta" id="histSearchMeta" style="display:none">
+              <span class="hist-search-count" id="histSearchCount"></span>
+              <button class="hist-search-meta-clear seg-btn" onclick="clearHistSearch()">
+                <span id="histSearchClearLbl">Effacer</span>
+              </button>
+            </div>
             <!-- Export / Import bar -->
             <div class="hist-actions">
               <div class="import-result" id="importResult"></div>
@@ -1662,6 +1720,10 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
               <button class="hist-action-btn" onclick="exportCSV()">
                 <span class="mi mi-sm">download</span>
                 <span id="exportBtnLabel">Exporter CSV</span>
+              </button>
+              <button class="hist-action-btn pdf-btn" onclick="exportPDF()">
+                <span class="mi mi-sm">picture_as_pdf</span>
+                <span id="exportPDFLabel">Rapport PDF</span>
               </button>
             </div>
             <input type="file" id="importFileInput" accept=".csv" style="display:none" onchange="importCSV(event)">
@@ -1788,7 +1850,7 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
       </div>
 
     <footer class="app-footer">
-        <div class="footer-version" id="footerVersion">v1.260301.33</div>
+        <div class="footer-version" id="footerVersion">v1.260301.45</div>
         <div class="footer-copy" id="footerCopy">© 2026 Budget 2026</div>
     </footer>
     </div>
@@ -4252,6 +4314,330 @@ function deleteRecur(id) {
   toast(LANG==='fr'?'Récurrence supprimée':'Recurring deleted', 'delete');
 }
 
+
+
+// ── HISTORY SEARCH ────────────────────────────────────────────────────────────
+let _histSearch = '';
+let _searchDebounce = null;
+
+function onHistSearch(val) {
+  clearTimeout(_searchDebounce);
+  _searchDebounce = setTimeout(() => {
+    _histSearch = val.trim().toLowerCase();
+    const clearBtn = document.getElementById('histSearchClear');
+    const meta     = document.getElementById('histSearchMeta');
+    if(clearBtn) clearBtn.style.display = _histSearch ? 'inline-flex' : 'none';
+    if(meta)     meta.style.display     = _histSearch ? 'block' : 'none';
+    renderHistory();
+  }, 180);
+}
+
+function clearHistSearch() {
+  _histSearch = '';
+  const inp   = document.getElementById('histSearchInput');
+  const clearBtn2 = document.getElementById('histSearchClear');
+  const meta2     = document.getElementById('histSearchMeta');
+  if(inp)       inp.value = '';
+  if(clearBtn2) clearBtn2.style.display = 'none';
+  if(meta2)     meta2.style.display     = 'none';
+  renderHistory();
+  inp?.focus();
+}
+
+// Highlight matching text in a string
+function highlightMatch(str, query) {
+  if(!query) return str;
+  const idx = str.toLowerCase().indexOf(query);
+  if(idx < 0) return str;
+  return str.slice(0, idx)
+    + '<span class="hist-highlight">' + str.slice(idx, idx + query.length) + '</span>'
+    + str.slice(idx + query.length);
+}
+
+
+// ── SWIPE TO DELETE ────────────────────────────────────────────────────────────
+const _swipe = { startX:0, startY:0, el:null, dragging:false, locked:false };
+const SWIPE_THRESHOLD  = 72;  // px to trigger delete
+const SWIPE_MAX        = 80;  // max reveal
+
+function swipeStart(e, el) {
+  const t = e.touches[0];
+  _swipe.startX   = t.clientX;
+  _swipe.startY   = t.clientY;
+  _swipe.el       = el;
+  _swipe.dragging = false;
+  _swipe.locked   = false;
+}
+
+function swipeMove(e, el) {
+  if(_swipe.locked) return;
+  const t    = e.touches[0];
+  const dx   = _swipe.startX - t.clientX;  // positive = swipe left
+  const dy   = Math.abs(t.clientY - _swipe.startY);
+
+  // If more vertical than horizontal, ignore (scroll)
+  if(!_swipe.dragging && dy > 8) { _swipe.locked = true; return; }
+  if(!_swipe.dragging && Math.abs(dx) > 6) _swipe.dragging = true;
+  if(!_swipe.dragging) return;
+
+  e.preventDefault(); // block scroll while swiping
+  const offset = Math.max(0, Math.min(dx, SWIPE_MAX));
+  el.style.transition = 'none';
+  el.style.transform  = `translateX(-${offset}px)`;
+}
+
+function swipeEnd(e, el) {
+  if(_swipe.locked || !_swipe.dragging) { return; }
+  const dx = _swipe.startX - e.changedTouches[0].clientX;
+  el.style.transition = '';
+
+  if(dx >= SWIPE_THRESHOLD) {
+    // Trigger delete
+    const id   = el.dataset.id;
+    const wrap = document.getElementById('wrap-' + id);
+    if(wrap) {
+      const h = wrap.offsetHeight;
+      wrap.style.maxHeight = h + 'px';
+      wrap.classList.add('deleting');
+      setTimeout(() => {
+        deleteTx(id);
+      }, 500);
+    }
+  } else {
+    // Snap back
+    el.style.transform = 'translateX(0)';
+  }
+  _swipe.dragging = false;
+}
+
+
+// ── PDF RAPPORT MENSUEL ───────────────────────────────────────────────────────
+async function exportPDF() {
+  if(typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') {
+    toast(LANG==='fr' ? 'Chargement PDF…' : 'Loading PDF…', 'hourglass_top');
+    return;
+  }
+
+  const { jsPDF } = window.jspdf || window;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  const monthNames = LANG==='fr'
+    ? ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
+    : ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  const moName   = monthNames[viewMonth] + ' ' + viewYear;
+  const mo       = thisMo();
+  const income   = mo.filter(t => t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expense  = mo.filter(t => t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const savings  = income - expense;
+  const userName = currentUser?.user_metadata?.full_name || currentUser?.email || '';
+
+  // ── Colors ──────────────────────────────────────────────────────────────────
+  const BLUE   = [26, 115, 232];
+  const GREEN  = [30, 142, 62];
+  const RED    = [217, 48, 37];
+  const GREY   = [120, 120, 130];
+  const LIGHT  = [245, 245, 250];
+  const WHITE  = [255, 255, 255];
+  const DARK   = [30, 30, 40];
+
+  const W = 210, M = 14;
+  let y = 0;
+
+  // ── Header band ─────────────────────────────────────────────────────────────
+  doc.setFillColor(...BLUE);
+  doc.rect(0, 0, W, 42, 'F');
+
+  doc.setTextColor(...WHITE);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(22);
+  doc.text('Budget 2026', M, 16);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(12);
+  doc.text(LANG==='fr' ? `Rapport mensuel — ${moName}` : `Monthly Report — ${moName}`, M, 26);
+
+  doc.setFontSize(9);
+  doc.setTextColor(200, 215, 255);
+  const today2 = new Date();
+  const dateStr = `${today2.getDate().toString().padStart(2,'0')}/${(today2.getMonth()+1).toString().padStart(2,'0')}/${today2.getFullYear()}`;
+  doc.text((LANG==='fr' ? 'Généré le ' : 'Generated on ') + dateStr + (userName ? ` · ${userName}` : ''), M, 36);
+
+  y = 52;
+
+  // ── KPI cards (3 boxes in a row) ────────────────────────────────────────────
+  const cardW = (W - M*2 - 8) / 3;
+  const cards = [
+    { label: LANG==='fr' ? 'Revenus'   : 'Income',   val: income,  col: GREEN },
+    { label: LANG==='fr' ? 'Dépenses'  : 'Expenses', val: expense, col: RED   },
+    { label: LANG==='fr' ? 'Épargne'   : 'Savings',  val: savings, col: savings>=0 ? GREEN : RED },
+  ];
+
+  cards.forEach((c, i) => {
+    const x = M + i * (cardW + 4);
+    doc.setFillColor(...LIGHT);
+    doc.roundedRect(x, y, cardW, 22, 3, 3, 'F');
+    doc.setDrawColor(...c.col);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(x, y, cardW, 22, 3, 3, 'S');
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...GREY);
+    doc.text(c.label, x + 4, y + 7);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(...c.col);
+    doc.text(fmt(c.val), x + 4, y + 17);
+  });
+
+  y += 30;
+
+  // ── Budget bar ───────────────────────────────────────────────────────────────
+  const pct = BUDGET_TOTAL > 0 ? Math.min(expense / BUDGET_TOTAL, 1) : 0;
+  const barW = W - M*2;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...GREY);
+  doc.text(LANG==='fr' ? 'Dépenses vs budget mensuel' : 'Expenses vs monthly budget', M, y);
+  doc.text(`${(pct*100).toFixed(0)}%  (${fmt(expense)} / ${fmt(BUDGET_TOTAL)})`, W - M, y, { align: 'right' });
+  y += 4;
+
+  doc.setFillColor(230, 230, 235);
+  doc.roundedRect(M, y, barW, 5, 2, 2, 'F');
+  const barCol = pct < 0.7 ? GREEN : pct < 0.9 ? [242, 153, 0] : RED;
+  doc.setFillColor(...barCol);
+  doc.roundedRect(M, y, barW * pct, 5, 2, 2, 'F');
+  y += 12;
+
+  // ── Expenses by category table ───────────────────────────────────────────────
+  const expTxs = mo.filter(t => t.type==='expense');
+  const catMap = {};
+  expTxs.forEach(tx => { catMap[tx.cat] = (catMap[tx.cat]||0) + tx.amount; });
+  const catRows = Object.entries(catMap)
+    .sort((a,b) => b[1]-a[1])
+    .map(([catId, amt]) => {
+      const cat = getCat(catId);
+      const pctCat = expense > 0 ? ((amt/expense)*100).toFixed(1) + '%' : '—';
+      const budgetCat = cat.budget || 0;
+      const status = budgetCat > 0
+        ? (amt <= budgetCat ? (LANG==='fr'?'✓ OK':'✓ OK') : (LANG==='fr'?'⚠ Dépassé':'⚠ Over'))
+        : '—';
+      return [cat.name, fmt(amt), pctCat, budgetCat>0?fmt(budgetCat):'—', status];
+    });
+
+  const catHeader = LANG==='fr'
+    ? [['Catégorie','Dépensé','%','Budget','Statut']]
+    : [['Category','Spent','%','Budget','Status']];
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...DARK);
+  doc.text(LANG==='fr' ? 'Dépenses par catégorie' : 'Expenses by category', M, y);
+  y += 4;
+
+  doc.autoTable({
+    startY: y,
+    head: catHeader,
+    body: catRows,
+    theme: 'grid',
+    margin: { left: M, right: M },
+    headStyles: { fillColor: BLUE, textColor: WHITE, fontStyle: 'bold', fontSize: 9 },
+    bodyStyles: { fontSize: 8.5, textColor: DARK },
+    alternateRowStyles: { fillColor: LIGHT },
+    tableWidth: 182,
+    columnStyles: {
+      0: { cellWidth: 'auto' },
+      1: { halign: 'right', cellWidth: 30 },
+      2: { halign: 'right', cellWidth: 18 },
+      3: { halign: 'right', cellWidth: 30 },
+      4: { halign: 'center', cellWidth: 24 },
+    },
+    didParseCell(data) {
+      if(data.column.index === 4 && data.section === 'body') {
+        const v = data.cell.raw || '';
+        if(v.includes('⚠')) data.cell.styles.textColor = RED;
+        else if(v.includes('✓')) data.cell.styles.textColor = GREEN;
+      }
+    }
+  });
+
+  y = doc.lastAutoTable.finalY + 8;
+
+  // ── Transaction list ──────────────────────────────────────────────────────────
+  if(mo.length > 0) {
+    // New page if needed
+    if(y > 220) { doc.addPage(); y = 14; }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...DARK);
+    doc.text(LANG==='fr' ? 'Détail des transactions' : 'Transaction details', M, y);
+    y += 4;
+
+    const txSorted = [...mo].sort((a,b) => a.date.localeCompare(b.date));
+    const txRows = txSorted.map(tx => {
+      const cat = getCat(tx.cat);
+      const sign = tx.type==='income' ? '+' : '-';
+      return [
+        fmtDate(tx.date),
+        tx.desc,
+        cat.name,
+        sign + fmt(tx.amount),
+      ];
+    });
+
+    const txHeader = LANG==='fr'
+      ? [['Date','Description','Catégorie','Montant']]
+      : [['Date','Description','Category','Amount']];
+
+    doc.autoTable({
+      startY: y,
+      head: txHeader,
+      body: txRows,
+      theme: 'striped',
+      margin: { left: M, right: M },
+      headStyles: { fillColor: [60, 60, 80], textColor: WHITE, fontStyle: 'bold', fontSize: 9 },
+      bodyStyles: { fontSize: 8, textColor: DARK },
+      alternateRowStyles: { fillColor: [250, 250, 253] },
+      tableWidth: 182,
+      columnStyles: {
+        0: { cellWidth: 24 },
+        1: { cellWidth: 'auto' },
+        2: { cellWidth: 38 },
+        3: { halign: 'right', cellWidth: 28 },
+      },
+      didParseCell(data) {
+        if(data.column.index === 3 && data.section === 'body') {
+          const v = data.cell.raw || '';
+          data.cell.styles.textColor = v.startsWith('+') ? GREEN : RED;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
+    });
+  }
+
+  // ── Footer on each page ───────────────────────────────────────────────────────
+  const pageCount = doc.getNumberOfPages();
+  for(let p = 1; p <= pageCount; p++) {
+    doc.setPage(p);
+    doc.setDrawColor(220, 220, 230);
+    doc.setLineWidth(0.3);
+    doc.line(M, 287, W - M, 287);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...GREY);
+    doc.text('Budget 2026', M, 292);
+    doc.text(`${p} / ${pageCount}`, W - M, 292, { align: 'right' });
+  }
+
+  // ── Save ──────────────────────────────────────────────────────────────────────
+  const filename = `budget_${viewYear}_${String(viewMonth+1).padStart(2,'0')}.pdf`;
+  doc.save(filename);
+  toast(LANG==='fr' ? '📄 Rapport PDF téléchargé' : '📄 PDF report downloaded', 'check_circle');
+}
+
 // ── EXPORT / IMPORT CSV ───────────────────────────────────────────────────────
 function exportCSV() {
   if(!txs.length) { toast(LANG==='fr'?'Aucune transaction à exporter':'No transactions to export', 'warning'); return; }
@@ -4397,7 +4783,7 @@ function applyI18n() {
   const fv = document.getElementById('footerVersion');
   const fc = document.getElementById('footerCopy');
   const d  = LANG==='fr' ? '01 Mar 2026' : 'Mar 01, 2026';
-  if(fv) fv.textContent = 'v1.260301.33 · ' + t.updatedOn + ' ' + d;
+  if(fv) fv.textContent = 'v1.260301.45 · ' + t.updatedOn + ' ' + d;
   if(fc) fc.textContent = '© 2026 Budget 2026 · ' + t.allRights;
   // Set topbar title to current view
   const ttEl = document.getElementById('topbarTitle');
@@ -4431,12 +4817,21 @@ function applyI18n() {
   if(dsp) dsp.textContent = t.demoSep  || 'ou';
   if(dbn) dbn.textContent = t.demoMode || 'MODE DÉMO — données fictives';
   if(dbe) dbe.textContent = t.demoExit || 'Quitter';
+  // Search i18n
+  const hsi = document.getElementById('histSearchInput');
+  if(hsi) hsi.placeholder = ' '; // keep placeholder=' ' for MD float label
+  const hsl = document.getElementById('histSearchLabel');
+  if(hsl) hsl.textContent = LANG==='fr' ? 'Rechercher…' : 'Search…';
+  const hscl = document.getElementById('histSearchClearLbl');
+  if(hscl) hscl.textContent = LANG==='fr' ? 'Effacer' : 'Clear';
   const dhl = document.getElementById('donutHintLabel');
   if(dhl) dhl.textContent = LANG==='fr' ? 'Voir le détail par catégorie' : 'View breakdown by category';
   // Export/Import labels
   const ebl = document.getElementById('exportBtnLabel');
   const ibl = document.getElementById('importBtnLabel');
   if(ebl) ebl.textContent = t.exportCSV || 'Export CSV';
+  const pdfLbl = document.getElementById('exportPDFLabel');
+  if(pdfLbl) pdfLbl.textContent = LANG==='fr' ? 'Rapport PDF' : 'PDF Report';
   const tbt = document.getElementById('tabTx');
   const tbc = document.getElementById('tabChart');
   if(tbt) tbt.textContent = LANG==='fr' ? 'Transactions' : 'Transactions';
@@ -4550,6 +4945,7 @@ function showView(id){
     renderHistory();
     if(_histTab === 'chart') renderTrendChart();
   }
+  if(id !== 'history' && _histSearch) clearHistSearch();
   if(id==='settings')   renderSettingsView();
   if(id==='recurring')  renderRecurringView();
 }
@@ -4942,20 +5338,66 @@ function renderOverview(){
 
 function filterHist(f,btn){ histFilter=f; document.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderHistory(); }
 function renderHistory(){
+  // Start from ALL transactions (not just current month)
   let list=[...txs];
-  if(histFilter==='income') list=list.filter(t=>t.type==='income');
-  if(histFilter==='expense') list=list.filter(t=>t.type==='expense');
+
+  // Type filter
+  if(histFilter==='income')  list=list.filter(tx=>tx.type==='income');
+  if(histFilter==='expense') list=list.filter(tx=>tx.type==='expense');
+
+  // Search filter
+  const q = (_histSearch||'').trim().toLowerCase();
+  if(q) {
+    list = list.filter(tx => {
+      const cat = getCat(tx.cat);
+      return tx.desc.toLowerCase().includes(q)
+          || (cat.name||'').toLowerCase().includes(q)
+          || tx.amount.toString().includes(q)
+          || tx.date.includes(q);
+    });
+    // Update meta
+    const countEl = document.getElementById('histSearchCount');
+    const clearEl = document.getElementById('histSearchClearLbl');
+    if(countEl) countEl.textContent = LANG==='fr'
+      ? `${list.length} résultat${list.length!==1?'s':''}`
+      : `${list.length} result${list.length!==1?'s':''}`;
+    const clrEl = document.getElementById('histSearchClearLbl');
+    if(clrEl) clrEl.textContent = LANG==='fr' ? 'Effacer' : 'Clear';
+    const meta = document.getElementById('histSearchMeta');
+    if(meta) meta.style.display = 'flex';
+  }
+
   list.sort((a,b)=>b.date.localeCompare(a.date));
   const el=document.getElementById('histBody');
-  if(!list.length){ el.innerHTML=`<div class="empty-tx"><div class="empty-icon"><span class="mi mi-xl">history</span></div><div class="empty-title">${t.noTx||'Aucune transaction'}</div></div>`; return; }
-  el.innerHTML=list.map(t=>{
-    const cat=getCat(t.cat);
-    return `<div class="hist-row" onclick="openEditTx('${t.id}')" style="cursor:pointer">
-      <div class="hist-date">${fmtDate(t.date)}</div>
-      <div class="hist-desc">${t.desc}</div>
-      <div class="hist-cat"><span style="width:7px;height:7px;border-radius:50%;background:${cat.color};display:inline-block;flex-shrink:0"></span>${cat.name}</div>
-      <div class="hist-amt ${t.type}">${t.type==='income'?'+':''}${fmt(t.amount)}</div>
-      <div><span class="mi mi-sm" style="color:var(--label3);font-size:16px">chevron_right</span></div>
+
+  if(!list.length){
+    const msg = q
+      ? (LANG==='fr' ? `Aucun résultat pour "${q}"` : `No results for "${q}"`)
+      : (t.noTx||'Aucune transaction');
+    el.innerHTML=`<div class="empty-tx"><div class="empty-icon"><span class="mi mi-xl">${q?'search_off':'history'}</span></div><div class="empty-title">${msg}</div></div>`;
+    return;
+  }
+
+  el.innerHTML=list.map(tx=>{
+    const cat=getCat(tx.cat);
+    const descHtml = highlightMatch(tx.desc, q);
+    const catHtml  = highlightMatch(cat.name, q);
+    return `<div class="hist-row-wrap" id="wrap-${tx.id}">
+      <div class="hist-swipe-action">
+        <span class="mi">delete</span>
+        <span>${LANG==='fr'?'Suppr.':'Delete'}</span>
+      </div>
+      <div class="hist-row" onclick="openEditTx('${tx.id}')" style="cursor:pointer"
+        data-id="${tx.id}"
+        ontouchstart="swipeStart(event,this)"
+        ontouchmove="swipeMove(event,this)"
+        ontouchend="swipeEnd(event,this)">
+        <div class="hist-date">${fmtDate(tx.date)}</div>
+        <div class="hist-desc">${descHtml}</div>
+        <div class="hist-cat"><span style="width:7px;height:7px;border-radius:50%;background:${cat.color};display:inline-block;flex-shrink:0"></span>${catHtml}</div>
+        <div class="hist-amt ${tx.type}">${tx.type==='income'?'+':''}${fmt(tx.amount)}</div>
+        <div><span class="mi mi-sm" style="color:var(--label3);font-size:16px">chevron_right</span></div>
+      </div>
     </div>`;
   }).join('');
 }
