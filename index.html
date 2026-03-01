@@ -805,6 +805,33 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 .scope-year-btn:hover { border-color: var(--blue); color: var(--blue); }
 .scope-year-label { font-size: 15px; font-weight: 700; min-width: 50px; text-align: center; }
 
+
+/* ── EXPORT / IMPORT ── */
+.hist-actions {
+  display: flex; gap: 8px; padding: 0 0 12px;
+  justify-content: flex-end;
+}
+.hist-action-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: var(--radius-xl);
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid var(--sep2);
+  background: var(--bg2); color: var(--label2);
+  transition: all .15s;
+}
+.hist-action-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+.hist-action-btn.import { border-color: var(--orange); color: var(--orange); }
+.hist-action-btn.import:hover { background: rgba(242,153,0,.08); }
+
+/* Import result banner */
+.import-result {
+  margin-bottom: 12px; padding: 12px 14px;
+  border-radius: var(--radius); font-size: 13px; font-weight: 600;
+  display: none; align-items: center; gap: 8px;
+}
+.import-result.ok  { background: var(--green-light, #e6f4ea); color: #1e8e3e; }
+.import-result.err { background: #fce8e6; color: #d93025; }
+
 @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 .summary-card,.budget-bar-card,.cat-card,.tx-card,.hist-table { animation:fadeUp .3s ease both; }
 
@@ -1059,6 +1086,19 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       <!-- HISTORY -->
       <div class="view" id="view-history">
         <div class="history-container">
+          <!-- Export / Import bar -->
+          <div class="hist-actions">
+            <div class="import-result" id="importResult"></div>
+            <button class="hist-action-btn import" onclick="triggerImport()">
+              <span class="mi mi-sm">upload</span>
+              <span id="importBtnLabel">Importer CSV</span>
+            </button>
+            <button class="hist-action-btn" onclick="exportCSV()">
+              <span class="mi mi-sm">download</span>
+              <span id="exportBtnLabel">Exporter CSV</span>
+            </button>
+          </div>
+          <input type="file" id="importFileInput" accept=".csv" style="display:none" onchange="importCSV(event)">
           <div class="seg-control">
             <button class="seg-btn active" onclick="filterHist('all',this)" data-i18n="all"></button>
             <button class="seg-btn" onclick="filterHist('income',this)" data-i18n="revenues"></button>
@@ -1153,7 +1193,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       </div>
 
     <footer class="app-footer">
-        <div class="footer-version" id="footerVersion">v1.260301.14</div>
+        <div class="footer-version" id="footerVersion">v1.260301.16</div>
         <div class="footer-copy" id="footerCopy">© 2026 Budget 2026</div>
     </footer>
     </div>
@@ -1305,7 +1345,7 @@ const I18N = {
     loading:"Chargement des données…",
     updatedOn:"Mis à jour le", allRights:"Tous droits réservés",
     today:"Aujourd'hui", disconnect:"Se déconnecter",
-    noTx:"Aucune transaction", addFirst:"Ajoutez votre première entrée",
+    noTx:"Aucune transaction", exportCSV:"Exporter CSV", importCSV:"Importer CSV", importing:"Import en cours…", importOk:"transactions importées", importErr:"Erreur d'import", addFirst:"Ajoutez votre première entrée",
     addIncome:"Ajouter un revenu", addExpense:"Ajouter une dépense",
     incomeProgress:"du revenu cible", expenseProgress:"du budget utilisé",
     installTitle:"Installer Budget 2026",
@@ -1348,7 +1388,7 @@ const I18N = {
     loading:"Loading data…",
     updatedOn:"Updated", allRights:"All rights reserved",
     today:"Today", disconnect:"Sign out",
-    noTx:"No transactions", addFirst:"Add your first entry",
+    noTx:"No transactions", exportCSV:"Export CSV", importCSV:"Import CSV", importing:"Importing…", importOk:"transactions imported", importErr:"Import error", addFirst:"Add your first entry",
     addIncome:"Add income", addExpense:"Add expense",
     incomeProgress:"of target income", expenseProgress:"of budget used",
     installTitle:"Install Budget 2026",
@@ -1718,15 +1758,13 @@ async function load() {
 }
 
 async function saveTx(tx) {
-  if(!currentUser) return;
-  try {
-    const { error } = await supa.from('transactions').upsert({
-      id: tx.id, type: tx.type, amount: tx.amount,
-      description: tx.desc, date: tx.date, category: tx.cat,
-      user_id: currentUser.id
-    });
-    if(error) throw error;
-  } catch(e) { console.warn('Supabase save failed', e); }
+  if(!currentUser) throw new Error('Not logged in');
+  const { error } = await supa.from('transactions').upsert({
+    id: tx.id, type: tx.type, amount: tx.amount,
+    description: tx.desc, date: tx.date, category: tx.cat,
+    user_id: currentUser.id
+  });
+  if(error) throw error; // propagate to caller
 }
 
 async function deleteTxRemote(id) {
@@ -2378,6 +2416,128 @@ function confirmGroupModal() {
   toast(`"${name}" ${t.groupCreated}`, 'check_circle');
 }
 
+
+// ── EXPORT / IMPORT CSV ───────────────────────────────────────────────────────
+function exportCSV() {
+  if(!txs.length) { toast(LANG==='fr'?'Aucune transaction à exporter':'No transactions to export', 'warning'); return; }
+
+  const header = ['id','date','type','amount','description','category'];
+  const rows = txs.map(tx => [
+    tx.id,
+    tx.date,
+    tx.type,
+    tx.amount,
+    '"' + (tx.desc||'').replace(/"/g,'""') + '"',
+    tx.cat
+  ].join(','));
+
+  const csv = [header.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const now  = new Date();
+  a.href     = url;
+  a.download = `budget_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast(LANG==='fr'?`${txs.length} transactions exportées`:`${txs.length} transactions exported`, 'download');
+}
+
+function triggerImport() {
+  document.getElementById('importFileInput').value = '';
+  document.getElementById('importFileInput').click();
+}
+
+async function importCSV(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+
+  const resultEl = document.getElementById('importResult');
+  const btn = document.querySelector('.hist-action-btn.import');
+
+  resultEl.style.display = 'none';
+  if(btn) btn.disabled = true;
+
+  try {
+    const text = await file.text();
+    const lines = text.trim().split('\n').filter(l => l.trim());
+    if(lines.length < 2) throw new Error(LANG==='fr'?'Fichier vide':'Empty file');
+
+    // Detect header
+    const header = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/"/g,''));
+    const idxId   = header.indexOf('id');
+    const idxDate = header.indexOf('date');
+    const idxType = header.indexOf('type');
+    const idxAmt  = header.indexOf('amount');
+    const idxDesc = header.findIndex(h => h.includes('desc'));
+    const idxCat  = header.findIndex(h => h.includes('cat'));
+
+    if(idxDate === -1 || idxType === -1 || idxAmt === -1) {
+      throw new Error(LANG==='fr'?'Colonnes manquantes (date, type, amount requises)':'Missing columns (date, type, amount required)');
+    }
+
+    // Parse rows
+    const newTxs = [];
+    const skipped = [];
+    for(let i = 1; i < lines.length; i++) {
+      // Handle quoted fields with commas inside
+      const cols = lines[i].match(/(".*?"|[^,]+)(?=,|$)/g) || lines[i].split(',');
+      const clean = cols.map(c => c.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+
+      const date = clean[idxDate]?.trim();
+      const type = clean[idxType]?.trim().toLowerCase();
+      const amount = parseFloat(clean[idxAmt]);
+      const desc = idxDesc >= 0 ? clean[idxDesc]?.trim() : '';
+      const cat  = idxCat  >= 0 ? clean[idxCat]?.trim()  : CATS.find(c=>c.type===type)?.id || '';
+      const id   = (idxId >= 0 && clean[idxId]?.trim()) ? clean[idxId].trim() : 'imp_' + Date.now() + '_' + i;
+
+      if(!date || !type || !amount || amount <= 0) { skipped.push(i+1); continue; }
+      if(type !== 'income' && type !== 'expense')  { skipped.push(i+1); continue; }
+
+      // Skip if already exists by id
+      if(txs.find(x => x.id === id)) continue;
+
+      newTxs.push({ id, date, type, amount, desc: desc || '—', cat });
+    }
+
+    if(!newTxs.length) throw new Error(LANG==='fr'?'Aucune nouvelle transaction à importer':'No new transactions to import');
+
+    // Save to Supabase in batch
+    let saved = 0, errors = 0;
+    for(const tx of newTxs) {
+      try {
+        await saveTx(tx);
+        txs.unshift(tx);
+        saved++;
+      } catch(e) { errors++; console.warn('Import row failed:', tx, e); }
+    }
+
+    // Sort by date desc
+    txs.sort((a,b) => b.date.localeCompare(a.date));
+
+    const msg = LANG==='fr'
+      ? `✓ ${saved} ${t.importOk}${errors ? ` (${errors} erreurs)` : ''}${skipped.length ? `, ${skipped.length} lignes ignorées` : ''}`
+      : `✓ ${saved} ${t.importOk}${errors ? ` (${errors} errors)` : ''}${skipped.length ? `, ${skipped.length} rows skipped` : ''}`;
+
+    resultEl.className = 'import-result ok';
+    resultEl.innerHTML = `<span class="mi mi-sm">check_circle</span> ${msg}`;
+    resultEl.style.display = 'flex';
+
+    renderOverview();
+    renderHistory();
+
+  } catch(e) {
+    resultEl.className = 'import-result err';
+    resultEl.innerHTML = `<span class="mi mi-sm">error</span> ${e.message}`;
+    resultEl.style.display = 'flex';
+    console.error('Import failed:', e);
+  } finally {
+    if(btn) btn.disabled = false;
+  }
+}
+
 const fmt  = n=>new Intl.NumberFormat('fr-CA',{style:'currency',currency:'CAD',maximumFractionDigits:0}).format(n);
 const fmtD = n=>new Intl.NumberFormat('fr-CA',{style:'currency',currency:'CAD',minimumFractionDigits:2}).format(n);
 const today=()=>new Date().toISOString().split('T')[0];
@@ -2402,7 +2562,7 @@ function applyI18n() {
   const fv = document.getElementById('footerVersion');
   const fc = document.getElementById('footerCopy');
   const d  = LANG==='fr' ? '01 Mar 2026' : 'Mar 01, 2026';
-  if(fv) fv.textContent = 'v1.260301.14 · ' + t.updatedOn + ' ' + d;
+  if(fv) fv.textContent = 'v1.260301.16 · ' + t.updatedOn + ' ' + d;
   if(fc) fc.textContent = '© 2026 Budget 2026 · ' + t.allRights;
   // Set topbar title to current view
   const ttEl = document.getElementById('topbarTitle');
@@ -2427,6 +2587,11 @@ function applyI18n() {
   if(sti) sti.textContent = isDark ? 'dark_mode' : 'light_mode';
   if(stl) stl.textContent = isDark ? t.darkMode : t.lightMode;
   if(ati) ati.textContent = isDark ? 'dark_mode' : 'light_mode';
+  // Export/Import labels
+  const ebl = document.getElementById('exportBtnLabel');
+  const ibl = document.getElementById('importBtnLabel');
+  if(ebl) ebl.textContent = t.exportCSV || 'Export CSV';
+  if(ibl) ibl.textContent = t.importCSV || 'Import CSV';
   // Sidebar lang label
   const sll = document.getElementById('sidebarLangLabel');
   if(sll) sll.textContent = t.language;
@@ -2520,7 +2685,7 @@ function updateAmtColor(){ document.getElementById('f-amount').className=current
 function buildSelect(){ const sel=document.getElementById('f-cat'); sel.innerHTML=CATS.filter(c=>c.type===currentType).map(c=>`<option value="${c.id}">${c.name}</option>`).join(''); }
 function quickAdd(t){ pickType(t); showView('add'); }
 
-function addTx(){
+async function addTx(){
   const amount=parseFloat(document.getElementById('f-amount').value);
   const desc=document.getElementById('f-desc').value.trim();
   const date=document.getElementById('f-date').value;
@@ -2528,14 +2693,30 @@ function addTx(){
   if(!amount||amount<=0){ toast(t.validAmount,'warning'); return; }
   if(!desc){ toast(t.validDesc,'warning'); return; }
   if(!date){ toast(t.validDate,'warning'); return; }
+
+  // Disable submit during save
+  const btn = document.getElementById('submitBtn');
+  if(btn) btn.disabled = true;
+
   const newTx = {id:Date.now().toString(),type:currentType,amount,desc,date,cat};
   txs.unshift(newTx);
-  saveTx(newTx);
-  document.getElementById('f-amount').value='';
-  document.getElementById('f-desc').value='';
-  document.getElementById('f-date').value=today();
-  toast(`${currentType==='income'?t.incomeLabel:t.expenseLabel} ${fmtD(amount)} ${t.txSaved}`);
-  showView('overview');
+
+  try {
+    await saveTx(newTx);
+    // Only clear form + navigate on success
+    document.getElementById('f-amount').value='';
+    document.getElementById('f-desc').value='';
+    document.getElementById('f-date').value=today();
+    toast(`${currentType==='income'?t.incomeLabel:t.expenseLabel} ${fmtD(amount)} ${t.txSaved}`);
+    showView('overview');
+  } catch(e) {
+    // Remove from local array if DB save failed
+    txs = txs.filter(x => x.id !== newTx.id);
+    console.error('addTx save failed:', e);
+    toast((LANG==='fr'?'Erreur — transaction non sauvegardée: ':'Error — transaction not saved: ') + (e.message||''), 'error');
+  } finally {
+    if(btn) btn.disabled = false;
+  }
 }
 
 function deleteTx(id){ txs=txs.filter(x=>x.id!==id); deleteTxRemote(id); renderOverview(); renderHistory(); toast(t.txDeleted,'delete'); }
