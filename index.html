@@ -667,6 +667,9 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
         <button class="month-today-btn hidden" id="mnToday" onclick="goToday()">Aujourd'hui</button>
       </div>
       <div class="topbar-right">
+        <button class="icon-btn" onclick="showView('overview')" title="Accueil">
+          <span class="mi">home</span>
+        </button>
         <button class="icon-btn" onclick="showView('settings')" title="Objectifs">
           <span class="mi">tune</span>
         </button>
@@ -1125,67 +1128,84 @@ async function loadSettings() {
     }
     // If no row, keep defaults — no error
   } catch(e) {
-    console.warn('Settings load failed, using defaults', e);
-    // Silently use defaults — do not rethrow
+    console.error('Settings load failed:', e);
+    // Use defaults silently — app still works
   }
 }
 
-// ── COLLECT SETTINGS FROM DOM ────────────────────────────────────────────────
-function collectSettingsFromDOM() {
-  const incomeTarget  = parseFloat(document.getElementById('s-income').value)  || 6700;
-  const expenseBudget = parseFloat(document.getElementById('s-expense').value) || 4428;
-  const savingsTarget = parseFloat(document.getElementById('s-savings').value) || 2272;
-  const catBudgets = {};
-  const catNames   = {};
-  CATS.filter(c=>c.type==='expense').forEach(c => {
-    const budgetEl = document.getElementById('s-cat-budget-' + c.id);
+// ── FLUSH DOM → MEMORY (sync inputs → CATS/GROUPS arrays) ───────────────────
+function flushDOMToMemory() {
+  // Global targets
+  const si = document.getElementById('s-income');
+  const se = document.getElementById('s-expense');
+  const ss = document.getElementById('s-savings');
+  if(si) INCOME_TARGET  = parseFloat(si.value) || INCOME_TARGET;
+  if(se) BUDGET_TOTAL   = parseFloat(se.value) || BUDGET_TOTAL;
+  if(ss) SAVINGS_TARGET = parseFloat(ss.value) || SAVINGS_TARGET;
+
+  // Per-category name + budget
+  CATS.forEach(c => {
     const nameEl   = document.getElementById('s-cat-name-'   + c.id);
-    if(budgetEl) catBudgets[c.id] = parseFloat(budgetEl.value) || 0;
-    if(nameEl)   catNames[c.id]   = nameEl.value.trim() || c.name;
+    const budgetEl = document.getElementById('s-cat-budget-' + c.id);
+    if(nameEl)   c.name   = nameEl.value.trim()        || c.name;
+    if(budgetEl) c.budget = parseFloat(budgetEl.value) || 0;
   });
-  const groupNames = {};
+
+  // Per-group name
   GROUPS.forEach(g => {
     const el = document.getElementById('s-group-name-' + g.id);
-    if(el) groupNames[g.id] = el.value.trim() || g.label;
+    if(el) g.label = el.value.trim() || g.label;
   });
-  return { incomeTarget, expenseBudget, savingsTarget, catBudgets, catNames, groupNames };
+}
+
+// ── BUILD PAYLOAD FROM MEMORY ─────────────────────────────────────────────────
+function buildSettingsPayload() {
+  const catBudgets = {}, catNames = {}, groupNames = {};
+  CATS.forEach(c => { catBudgets[c.id] = c.budget; catNames[c.id] = c.name; });
+  GROUPS.forEach(g => { groupNames[g.id] = g.label; });
+  return {
+    user_id:          currentUser.id,
+    income_target:    INCOME_TARGET,
+    expense_budget:   BUDGET_TOTAL,
+    savings_target:   SAVINGS_TARGET,
+    category_budgets: catBudgets,
+    category_names:   catNames,
+    group_names:      groupNames,
+    custom_cats:      JSON.stringify(CATS.filter(c=>c._custom)),
+    custom_groups:    JSON.stringify(GROUPS.filter(g=>g._custom)),
+    updated_at:       new Date().toISOString()
+  };
 }
 
 async function saveSettings() {
   if(!currentUser) { toast("Connectez-vous d'abord", 'warning'); return; }
-  const { incomeTarget, expenseBudget, savingsTarget, catBudgets, catNames, groupNames } = collectSettingsFromDOM();
+
+  // 1. Sync DOM inputs → memory arrays
+  flushDOMToMemory();
+
+  // 2. Show saving indicator
+  const btn = document.querySelector('.settings-save-btn');
+  if(btn) { btn.disabled = true; btn.innerHTML = '<span class="mi mi-sm">hourglass_empty</span> Sauvegarde…'; }
 
   try {
-    const { error } = await supa.from('settings').upsert({
-      user_id:          currentUser.id,
-      income_target:    incomeTarget,
-      expense_budget:   expenseBudget,
-      savings_target:   savingsTarget,
-      category_budgets: catBudgets,
-      category_names:   catNames,
-      group_names:      groupNames,
-      custom_cats:      JSON.stringify(CATS.filter(c=>c._custom)),
-      custom_groups:    JSON.stringify(GROUPS.filter(g=>g._custom)),
-      updated_at:       new Date().toISOString()
-    });
+    const payload = buildSettingsPayload();
+    const { error } = await supa.from('settings').upsert(payload);
     if(error) throw error;
 
-    // Apply locally
-    BUDGET_TOTAL   = expenseBudget;
-    INCOME_TARGET  = incomeTarget;
-    SAVINGS_TARGET = savingsTarget;
-    CATS.forEach(c => {
-      if(catBudgets[c.id] !== undefined) c.budget = catBudgets[c.id];
-      if(catNames[c.id])   c.name   = catNames[c.id];
-    });
-    GROUPS.forEach(g => { if(groupNames[g.id]) g.label = groupNames[g.id]; });
+    userSettings = {
+      income_target:    INCOME_TARGET,
+      expense_budget:   BUDGET_TOTAL,
+      savings_target:   SAVINGS_TARGET,
+      category_budgets: payload.category_budgets
+    };
 
-    userSettings = { income_target:incomeTarget, expense_budget:expenseBudget, savings_target:savingsTarget, category_budgets:catBudgets };
     toast('Objectifs enregistrés !', 'check_circle');
     showView('overview');
   } catch(e) {
-    console.warn('Settings save failed', e);
-    toast('Erreur de sauvegarde', 'error');
+    console.error('Settings save failed:', e);
+    toast('Erreur : ' + (e.message || 'vérifiez la connexion'), 'error');
+  } finally {
+    if(btn) { btn.disabled = false; btn.innerHTML = '<span class="mi mi-sm">save</span> Enregistrer les objectifs'; }
   }
 }
 
