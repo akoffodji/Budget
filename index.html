@@ -395,6 +395,71 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 .user-menu-item.danger { color: var(--red); }
 .user-menu-item.danger .mi { color: var(--red); }
 
+
+/* ── SETTINGS VIEW ── */
+.settings-container { max-width: 640px; }
+.settings-section {
+  background: var(--bg2); border-radius: var(--radius-xl);
+  overflow: hidden; box-shadow: var(--shadow-sm); margin-bottom: 20px;
+}
+.settings-section-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px; border-bottom: 1px solid var(--sep2);
+}
+.settings-section-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.settings-section-title { font-size: 15px; font-weight: 700; }
+.settings-section-sub { font-size: 12px; color: var(--label3); margin-top: 1px; }
+
+.settings-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 20px; border-bottom: 1px solid var(--sep2);
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.settings-row-label { flex: 1; }
+.settings-row-name { font-size: 14px; font-weight: 500; color: var(--label); }
+.settings-row-desc { font-size: 11px; color: var(--label3); margin-top: 1px; }
+.settings-input-wrap { position: relative; }
+.settings-input {
+  width: 120px; padding: 8px 36px 8px 10px;
+  background: var(--fill3); border: 1.5px solid transparent;
+  border-radius: var(--radius); color: var(--label);
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  outline: none; text-align: right;
+  transition: border-color .2s, background .15s;
+}
+.settings-input:focus { border-color: var(--blue); background: var(--bg2); }
+.settings-input-suffix {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  font-size: 12px; color: var(--label3); pointer-events: none; font-weight: 500;
+}
+.settings-total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 20px; background: var(--fill4);
+  border-top: 1px solid var(--sep2);
+}
+.settings-total-label { font-size: 13px; color: var(--label3); font-weight: 500; }
+.settings-total-value { font-size: 15px; font-weight: 700; }
+.settings-total-value.ok { color: var(--green); }
+.settings-total-value.warn { color: var(--orange); }
+
+.settings-save-btn {
+  width: 100%; padding: 15px; border: none; border-radius: var(--radius-lg);
+  background: var(--blue); color: #fff; font-family: inherit;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 3px 10px rgba(26,115,232,.35);
+  transition: box-shadow .2s, transform .1s;
+}
+.settings-save-btn:hover { box-shadow: 0 4px 16px rgba(26,115,232,.45); }
+.settings-save-btn:active { transform: scale(.98); }
+
 @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 .summary-card,.budget-bar-card,.cat-card,.tx-card,.hist-table { animation:fadeUp .3s ease both; }
 
@@ -458,6 +523,9 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       </button>
       <button class="nav-item" id="nav-history" onclick="showView('history')">
         <span class="mi nav-icon">history</span> Historique
+      </button>
+      <button class="nav-item" id="nav-settings" onclick="showView('settings')">
+        <span class="mi nav-icon">tune</span> Objectifs
       </button>
     </nav>
   </aside>
@@ -634,6 +702,64 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
         </div>
       </div>
 
+      <!-- SETTINGS -->
+      <div class="view" id="view-settings">
+        <div class="settings-container">
+
+          <!-- Objectifs globaux -->
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <div class="settings-section-icon" style="background:#e8f0fe;color:#1a73e8"><span class="mi">flag</span></div>
+              <div>
+                <div class="settings-section-title">Objectifs globaux</div>
+                <div class="settings-section-sub">Revenus, dépenses et épargne mensuels</div>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-icon" style="background:#e6f4ea;color:#1e8e3e"><span class="mi">trending_up</span></div>
+              <div class="settings-row-label">
+                <div class="settings-row-name">Revenus cibles</div>
+                <div class="settings-row-desc">Revenu mensuel attendu</div>
+              </div>
+              <div class="settings-input-wrap">
+                <input class="settings-input" type="number" id="s-income" min="0" step="100">
+                <span class="settings-input-suffix">$/mois</span>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-icon" style="background:#fce8e6;color:#d93025"><span class="mi">trending_down</span></div>
+              <div class="settings-row-label">
+                <div class="settings-row-name">Budget dépenses</div>
+                <div class="settings-row-desc">Maximum mensuel total</div>
+              </div>
+              <div class="settings-input-wrap">
+                <input class="settings-input" type="number" id="s-expense" min="0" step="100" oninput="updateSettingsTotal()">
+                <span class="settings-input-suffix">$/mois</span>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-icon" style="background:#e8f0fe;color:#1a73e8"><span class="mi">savings</span></div>
+              <div class="settings-row-label">
+                <div class="settings-row-name">Épargne cible</div>
+                <div class="settings-row-desc">Montant à mettre de côté</div>
+              </div>
+              <div class="settings-input-wrap">
+                <input class="settings-input" type="number" id="s-savings" min="0" step="100">
+                <span class="settings-input-suffix">$/mois</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Catégories de dépenses -->
+          <div id="settingsCatSections"></div>
+
+          <button class="settings-save-btn" onclick="saveSettings()">
+            <span class="mi mi-sm">save</span> Enregistrer les objectifs
+          </button>
+
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -644,7 +770,9 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 </div>
 
 <script>
-const BUDGET_TOTAL=4428, INCOME_TARGET=6700, SAVINGS_TARGET=2272;
+let BUDGET_TOTAL=4428, INCOME_TARGET=6700, SAVINGS_TARGET=2272;
+// userSettings holds all configurable values loaded from Supabase
+let userSettings = { income_target:6700, expense_budget:4428, savings_target:2272, category_budgets:{} };
 
 const CATS = [
   { id:'hypotheques',    name:'Hypothèques',    budget:1800, color:'#1a73e8', icon:'home',             type:'expense' },
@@ -677,7 +805,7 @@ let viewYear=new Date().getFullYear(), viewMonth=new Date().getMonth();
 
 // ── SUPABASE ──────────────────────────────────────────────────────────────────
 const SUPA_URL = 'https://pbnbxphjnquqvraphrve.supabase.co';
-const SUPA_KEY = 'sb_publishable_3r9GtLi81YBSNDK_KvqT-A_I_oVhnbT';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBibmJ4cGhqbnF1cXZyYXBocnZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzMzExMjYsImV4cCI6MjA4NzkwNzEyNn0.LWOsWPIqy_ySoObReZNzabK_p3zZWWpiOETfeFA5aiw';
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY, {
   auth: { redirectTo: 'https://creative-twilight-42e692.netlify.app' }
 });
@@ -783,6 +911,148 @@ async function deleteTxRemote(id) {
 
 async function save() {}
 
+// ── SETTINGS ──────────────────────────────────────────────────────────────────
+async function loadSettings() {
+  if(!currentUser) return;
+  try {
+    const { data, error } = await supa
+      .from('settings')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .maybeSingle(); // maybeSingle returns null instead of throwing on no rows
+    if(error) throw error;
+    if(data) {
+      userSettings = {
+        income_target:  parseFloat(data.income_target)  || 6700,
+        expense_budget: parseFloat(data.expense_budget) || 4428,
+        savings_target: parseFloat(data.savings_target) || 2272,
+        category_budgets: data.category_budgets || {}
+      };
+      CATS.forEach(c => {
+        if(userSettings.category_budgets[c.id] !== undefined)
+          c.budget = parseFloat(userSettings.category_budgets[c.id]);
+      });
+      BUDGET_TOTAL   = userSettings.expense_budget;
+      INCOME_TARGET  = userSettings.income_target;
+      SAVINGS_TARGET = userSettings.savings_target;
+    }
+    // If no row, keep defaults — no error
+  } catch(e) {
+    console.warn('Settings load failed, using defaults', e);
+    // Silently use defaults — do not rethrow
+  }
+}
+
+async function saveSettings() {
+  if(!currentUser) { toast("Connectez-vous d'abord", 'warning'); return; }
+
+  // Collect global targets
+  const incomeTarget  = parseFloat(document.getElementById('s-income').value)  || 6700;
+  const expenseBudget = parseFloat(document.getElementById('s-expense').value) || 4428;
+  const savingsTarget = parseFloat(document.getElementById('s-savings').value) || 2272;
+
+  // Collect per-category budgets
+  const catBudgets = {};
+  CATS.filter(c=>c.type==='expense').forEach(c => {
+    const el = document.getElementById('s-cat-' + c.id);
+    if(el) catBudgets[c.id] = parseFloat(el.value) || 0;
+  });
+
+  try {
+    const { error } = await supa.from('settings').upsert({
+      user_id:         currentUser.id,
+      income_target:   incomeTarget,
+      expense_budget:  expenseBudget,
+      savings_target:  savingsTarget,
+      category_budgets: catBudgets,
+      updated_at:      new Date().toISOString()
+    });
+    if(error) throw error;
+
+    // Apply locally
+    userSettings = { income_target:incomeTarget, expense_budget:expenseBudget, savings_target:savingsTarget, category_budgets:catBudgets };
+    BUDGET_TOTAL   = expenseBudget;
+    INCOME_TARGET  = incomeTarget;
+    SAVINGS_TARGET = savingsTarget;
+    CATS.forEach(c => { if(catBudgets[c.id] !== undefined) c.budget = catBudgets[c.id]; });
+
+    toast('Objectifs enregistrés !', 'check_circle');
+    showView('overview');
+  } catch(e) {
+    console.warn('Settings save failed', e);
+    toast('Erreur de sauvegarde', 'error');
+  }
+}
+
+function renderSettingsView() {
+  // Fill global fields
+  document.getElementById('s-income').value  = userSettings.income_target;
+  document.getElementById('s-expense').value = userSettings.expense_budget;
+  document.getElementById('s-savings').value = userSettings.savings_target;
+
+  // Build per-group / per-category sections
+  const container = document.getElementById('settingsCatSections');
+  container.innerHTML = GROUPS.map(g => {
+    const gCats = g.cats.map(id => CATS.find(c=>c.id===id)).filter(Boolean);
+    const rows = gCats.map(c => `
+      <div class="settings-row">
+        <div class="settings-row-icon" style="background:${c.color}18;color:${c.color}">
+          <span class="mi">${c.icon}</span>
+        </div>
+        <div class="settings-row-label">
+          <div class="settings-row-name">${c.name}</div>
+        </div>
+        <div class="settings-input-wrap">
+          <input class="settings-input" type="number" id="s-cat-${c.id}"
+            value="${c.budget}" min="0" step="50" oninput="updateCatTotal('${g.id}')">
+          <span class="settings-input-suffix">$/mois</span>
+        </div>
+      </div>`).join('');
+
+    const gTotal = gCats.reduce((s,c)=>s+c.budget,0);
+    return `
+    <div class="settings-section">
+      <div class="settings-section-header">
+        <div class="settings-section-icon" style="background:${g.bg};color:${g.color}">
+          <span class="mi">${g.icon}</span>
+        </div>
+        <div>
+          <div class="settings-section-title">${g.label}</div>
+          <div class="settings-section-sub">Budget par catégorie</div>
+        </div>
+      </div>
+      ${rows}
+      <div class="settings-total-row">
+        <span class="settings-total-label">Total ${g.label}</span>
+        <span class="settings-total-value ok" id="gt-${g.id}">${fmt(gTotal)} / mois</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  updateSettingsTotal();
+}
+
+function updateCatTotal(groupId) {
+  const g = GROUPS.find(x=>x.id===groupId);
+  if(!g) return;
+  const total = g.cats
+    .map(id => parseFloat(document.getElementById('s-cat-'+id)?.value)||0)
+    .reduce((s,v)=>s+v,0);
+  const el = document.getElementById('gt-'+groupId);
+  if(el) el.textContent = fmt(total) + ' / mois';
+  updateSettingsTotal();
+}
+
+function updateSettingsTotal() {
+  const budget = parseFloat(document.getElementById('s-expense')?.value)||0;
+  const allCatTotal = CATS.filter(c=>c.type==='expense')
+    .reduce((s,c) => {
+      const el = document.getElementById('s-cat-'+c.id);
+      return s + (el ? parseFloat(el.value)||0 : c.budget);
+    }, 0);
+  // Update expense total indicator if needed
+}
+
 const fmt  = n=>new Intl.NumberFormat('fr-CA',{style:'currency',currency:'CAD',maximumFractionDigits:0}).format(n);
 const fmtD = n=>new Intl.NumberFormat('fr-CA',{style:'currency',currency:'CAD',minimumFractionDigits:2}).format(n);
 const today=()=>new Date().toISOString().split('T')[0];
@@ -797,7 +1067,7 @@ function toast(msg,icon='check_circle'){
   el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2800);
 }
 
-const titles={overview:"Vue d'ensemble",add:"Ajouter",history:"Historique"};
+const titles={overview:"Vue d'ensemble",add:"Ajouter",history:"Historique",settings:"Objectifs"};
 function showView(id){
   closeSidebar();
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -805,11 +1075,12 @@ function showView(id){
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   const nb=document.getElementById('nav-'+id); if(nb) nb.classList.add('active');
   document.getElementById('topbarTitle').textContent=titles[id];
-  const isOv=id==='overview';
+  const isOv=(id==='overview');
   document.getElementById('monthNavWrap').style.display=isOv?'flex':'none';
   document.getElementById('mnToday').style.display=isOv?'':'none';
   if(id==='overview') renderOverview();
   if(id==='history')  renderHistory();
+  if(id==='settings') renderSettingsView();
 }
 
 function toggleSidebar(){
@@ -987,29 +1258,51 @@ async function init(){
   document.getElementById('f-date').value=today();
   buildSelect();
 
-  // Check auth state
-  const { data: { session } } = await supa.auth.getSession();
-  if(session && session.user) {
-    showApp(session.user);
-    await load();
-    renderOverview();
-  } else {
+  const overlay = document.getElementById('loadingOverlay');
+
+  // ── FAILSAFE: force-hide after 5s no matter what ──
+  const hideOverlay = () => {
+    overlay.classList.add('fade');
+    setTimeout(() => { overlay.style.display='none'; }, 400);
+  };
+  setTimeout(hideOverlay, 5000);
+
+  // ── Show auth screen immediately, load data in background ──
+  // This avoids blocking on Supabase network calls
+  hideOverlay(); // Hide overlay right away
+
+  // Check session
+  try {
+    const { data } = await Promise.race([
+      supa.auth.getSession(),
+      new Promise((_,r) => setTimeout(() => r(new Error('timeout')), 4000))
+    ]);
+    const session = data?.session;
+    if(session && session.user) {
+      showApp(session.user);
+      loadSettings().then(() => load()).then(() => renderOverview()).catch(console.warn);
+    } else {
+      showAuthScreen();
+    }
+  } catch(e) {
+    console.warn('Session check failed:', e);
     showAuthScreen();
   }
 
-  // Hide loading overlay
-  const overlay = document.getElementById('loadingOverlay');
-  overlay.classList.add('fade');
-  setTimeout(() => overlay.style.display='none', 450);
-
-  // Listen for auth changes (e.g. after OAuth redirect)
+  // Listen for auth changes
   supa.auth.onAuthStateChange(async (event, session) => {
-    if(event === 'SIGNED_IN' && session) {
-      showApp(session.user);
-      await load();
-      renderOverview();
-    } else if(event === 'SIGNED_OUT') {
-      showAuthScreen();
+    try {
+      if(event === 'SIGNED_IN' && session) {
+        showApp(session.user);
+        await loadSettings();
+        await load();
+        renderOverview();
+      } else if(event === 'SIGNED_OUT') {
+        txs = [];
+        showAuthScreen();
+      }
+    } catch(e) {
+      console.error('Auth change error:', e);
     }
   });
 }
