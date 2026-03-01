@@ -138,38 +138,63 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 }
 .topbar-left { display:flex; align-items:center; gap:0; }
 .topbar-title { font-size:15px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:90px; }
-/* Hide title on mobile when on overview (no need — month nav is enough) */
+/* ── TOPBAR TITLE: hide on mobile when on overview ── */
 @media(max-width:700px) {
-  .topbar-title.is-overview { display: none; }
+  .topbar-title.is-overview { 
+    display: none !important; 
+  }
 }
-/* Topbar right icon collapse */
-.topbar-right { position: relative; }
-.topbar-icons-wrap {
-  display: flex; align-items: center; gap: 0;
-  transition: all .2s;
-}
-.topbar-icons-wrap.collapsed .icon-btn:not(.user-avatar-wrap) {
-  width: 0; overflow: hidden; padding: 0; opacity: 0; pointer-events: none;
-}
+
+/* ── TOPBAR ICONS COLLAPSE ── */
+/* Expand button: hidden by default, shown on narrow screens */
 .topbar-expand-btn {
   width: 36px; height: 36px; border-radius: 50%; border: none;
   background: var(--fill3); cursor: pointer; display: none;
   align-items: center; justify-content: center; color: var(--label2);
-  margin-right: 4px; transition: background .15s;
+  transition: background .15s; flex-shrink: 0; z-index: 10;
 }
 .topbar-expand-btn:hover { background: var(--fill4); }
-/* On narrow screens show the expand button and collapse icons */
+.topbar-btn-label { display: none; font-size: 13px; font-weight: 600; color: var(--label); }
+@media(max-width:420px) { .topbar-btn-label { display: inline; } }
+
+/* Icons wrap: always flex on wide screens */
+.topbar-icons-wrap {
+  display: flex; align-items: center; gap: 0;
+}
+
 @media(max-width:420px) {
+  /* Show the ⋯ button */
   .topbar-expand-btn { display: flex; }
-  .topbar-icons-wrap.collapsed .icon-btn { 
-    width: 0; overflow: hidden; padding: 0; opacity: 0; pointer-events: none;
-    margin: 0; min-width: 0;
-  }
-  .topbar-icons-wrap { 
-    overflow: hidden; max-width: 0; transition: max-width .25s ease;
+
+  /* Icons wrap: hidden by default, drops DOWN-LEFT as absolute panel */
+  .topbar-icons-wrap {
+    display: none;
+    position: fixed;
+    top: calc(44px + env(safe-area-inset-top, 0px));
+    right: 8px;
+    background: var(--bg2);
+    border: 1px solid var(--sep2);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 8px 24px rgba(0,0,0,.15);
+    flex-direction: column;
+    padding: 6px;
+    gap: 2px;
+    z-index: 200;
+    min-width: 140px;
   }
   .topbar-icons-wrap.expanded {
-    max-width: 200px;
+    display: flex;
+  }
+  /* Make icon buttons full-width rows in the dropdown */
+  .topbar-icons-wrap .icon-btn {
+    width: 100%; border-radius: var(--radius);
+    justify-content: flex-start; padding: 0 12px;
+    height: 40px; gap: 10px; font-size: 13px; font-weight: 600;
+  }
+  .topbar-icons-wrap .user-avatar {
+    width: 100%; border-radius: var(--radius); height: 40px;
+    justify-content: flex-start; padding: 0 12px; gap: 10px;
+    font-size: 13px; font-weight: 600;
   }
 }
 .topbar-center { display:flex; align-items:center; justify-content:center; gap:2px; }
@@ -216,6 +241,19 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 .summary-card.expense .summary-value { color:var(--red); }
 .summary-card.savings .summary-value { color:var(--blue); }
 .summary-sub { font-size:11px; color:var(--label3); }
+
+/* ── MONTH COMPARISON ── */
+.summary-compare { display: flex; align-items: center; gap: 4px; }
+.cmp-badge {
+  display: inline-flex; align-items: center; gap: 2px;
+  font-size: 10px; font-weight: 800; padding: 1px 6px;
+  border-radius: 20px; white-space: nowrap;
+}
+.cmp-badge.up   { background: var(--green-light); color: var(--green); }
+.cmp-badge.down { background: var(--red-light);   color: var(--red);   }
+.cmp-badge.neu  { background: var(--fill4);        color: var(--label3);}
+.cmp-lbl { font-size: 10px; color: var(--label3); }
+
 .quick-add-btn { width:30px; height:30px; border-radius:50%; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s, transform .1s; }
 .quick-add-btn:active { transform:scale(.88); }
 .income .quick-add-btn { background:var(--green-light); color:var(--green); }
@@ -840,6 +878,233 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 .scope-year-label { font-size: 15px; font-weight: 700; min-width: 50px; text-align: center; }
 
 
+
+/* ── TREND CHART ── */
+.hist-main-tabs {
+  display: flex; background: var(--fill3); border-radius: var(--radius); padding: 2px;
+  margin-bottom: 14px; gap: 2px;
+}
+.hist-main-tab {
+  flex: 1; padding: 8px 0; border: none; border-radius: calc(var(--radius) - 2px);
+  background: transparent; font-family: inherit; font-size: 13px; font-weight: 600;
+  color: var(--label3); cursor: pointer; transition: all .2s;
+}
+.hist-main-tab.active { background: var(--bg2); color: var(--label); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+
+.chart-period-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.chart-period-btn {
+  padding: 7px 18px; border-radius: 20px; border: 1.5px solid var(--sep);
+  background: transparent; font-family: inherit; font-size: 13px; font-weight: 600;
+  color: var(--label2); cursor: pointer; transition: all .15s;
+}
+.chart-period-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+.chart-card {
+  background: var(--bg2); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm);
+  padding: 16px; margin-bottom: 12px; position: relative; overflow: hidden;
+}
+.chart-legend { display: flex; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.chart-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--label2); }
+.chart-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.chart-scroll-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.trend-svg { display: block; min-width: 100%; }
+
+/* Tooltip */
+.chart-tooltip {
+  position: absolute;
+  background: #1a1a2e;
+  color: #f0f0f8;
+  padding: 10px 14px; border-radius: var(--radius); font-size: 12px; font-weight: 600;
+  pointer-events: none; z-index: 10; white-space: nowrap;
+  box-shadow: 0 6px 20px rgba(0,0,0,.4); min-width: 150px;
+  border: 1px solid rgba(255,255,255,.1);
+}
+/* Force readable colors regardless of theme */
+[data-theme="dark"] .chart-tooltip {
+  background: #2a2a3e;
+  border-color: rgba(255,255,255,.15);
+}
+.chart-tooltip-month { font-size: 11px; color: rgba(255,255,255,.6); margin-bottom: 6px; font-weight: 500; }
+.chart-tooltip-row { display: flex; justify-content: space-between; gap: 16px; margin-top: 3px; color: #f0f0f8; }
+.chart-tooltip-label { color: rgba(255,255,255,.75); font-weight: 500; }
+.chart-tooltip-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+
+/* Summary table */
+.chart-summary-card {
+  background: var(--bg2); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm);
+  overflow: hidden; margin-bottom: 12px;
+}
+.chart-summary-title {
+  font-size: 12px; font-weight: 700; color: var(--label3); text-transform: uppercase;
+  letter-spacing: .05em; padding: 12px 16px 8px;
+}
+.chart-summary-row {
+  display: grid; grid-template-columns: 80px 1fr 1fr 1fr;
+  padding: 10px 16px; border-top: 1px solid var(--sep2);
+  font-size: 13px; align-items: center; cursor: pointer; transition: background .1s;
+}
+.chart-summary-row:hover { background: var(--fill4); }
+.chart-summary-row.active-month { background: var(--blue-light); }
+.chart-summary-month { font-weight: 700; color: var(--label); font-size: 12px; }
+.chart-summary-income  { font-weight: 700; color: var(--green); text-align: right; }
+.chart-summary-expense { font-weight: 700; color: var(--red);   text-align: right; }
+.chart-summary-savings { font-weight: 700; text-align: right; }
+.chart-summary-header {
+  display: grid; grid-template-columns: 80px 1fr 1fr 1fr;
+  padding: 6px 16px; background: var(--fill3);
+  font-size: 10px; font-weight: 700; color: var(--label3); text-transform: uppercase; letter-spacing: .05em;
+}
+.chart-summary-header div:not(:first-child) { text-align: right; }
+
+
+/* ── RECURRING TRANSACTIONS ── */
+.recur-toggle-wrap {
+  background: var(--bg2); border-radius: var(--radius-xl);
+  margin: 12px 0; overflow: hidden; box-shadow: var(--shadow-sm);
+}
+.recur-toggle-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; cursor: pointer; transition: background .15s;
+}
+.recur-toggle-row:hover { background: var(--fill4); }
+.recur-toggle-label { flex: 1; }
+.recur-toggle-title { font-size: 14px; font-weight: 600; color: var(--label); }
+.recur-toggle-sub   { font-size: 11px; color: var(--label3); margin-top: 2px; }
+.recur-switch-track {
+  width: 44px; height: 26px; border-radius: 13px; background: var(--sep);
+  position: relative; transition: background .2s; flex-shrink: 0;
+}
+.recur-switch-track.on { background: var(--blue); }
+.recur-switch-thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2); transition: transform .2s;
+}
+.recur-switch-track.on .recur-switch-thumb { transform: translateX(18px); }
+
+/* Recurring options panel */
+.recur-options {
+  padding: 0 16px 16px; border-top: 1px solid var(--sep2);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.recur-opt-label {
+  font-size: 11px; font-weight: 700; color: var(--label3);
+  text-transform: uppercase; letter-spacing: .05em; margin-top: 4px;
+}
+.recur-freq-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px;
+}
+.recur-freq-btn {
+  padding: 8px 4px; border-radius: var(--radius); border: 1.5px solid var(--sep);
+  background: transparent; font-family: inherit; font-size: 12px; font-weight: 700;
+  color: var(--label2); cursor: pointer; transition: all .15s; text-align: center;
+}
+.recur-freq-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+.recur-end-btns { display: flex; gap: 6px; }
+.recur-end-btn {
+  flex: 1; padding: 8px 6px; border-radius: var(--radius); border: 1.5px solid var(--sep);
+  background: transparent; font-family: inherit; font-size: 12px; font-weight: 700;
+  color: var(--label2); cursor: pointer; transition: all .15s; text-align: center;
+}
+.recur-end-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+.recur-end-detail { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+.recur-end-input {
+  padding: 9px 12px; border: 1.5px solid var(--sep); border-radius: var(--radius);
+  font-family: inherit; font-size: 14px; background: var(--bg); color: var(--label); outline: none;
+  width: 80px; text-align: center;
+}
+input[type="date"].recur-end-input { width: auto; flex: 1; text-align: left; }
+.recur-end-input:focus { border-color: var(--blue); }
+.recur-end-unit {
+  font-size: 12px; color: var(--label3); font-weight: 600; white-space: nowrap;
+  display: flex; align-items: center; height: 100%; padding: 0 4px;
+  line-height: 1;
+}
+.recur-summary {
+  background: var(--blue-light); border-radius: var(--radius);
+  padding: 10px 12px; font-size: 12px; font-weight: 600; color: var(--blue);
+  display: flex; align-items: center; gap: 8px;
+}
+/* Recurring card freq chip */
+.recur-freq-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 700; padding: 2px 7px;
+  border-radius: 10px; background: var(--blue-light); color: var(--blue); margin-left: 6px;
+}
+.recur-end-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 700; padding: 2px 7px;
+  border-radius: 10px; background: var(--fill4); color: var(--label3);
+}
+.recur-progress {
+  height: 4px; background: var(--fill4); border-radius: 2px; margin-top: 6px; overflow: hidden;
+}
+.recur-progress-inner { height: 100%; border-radius: 2px; background: var(--blue); }
+
+
+.recur-list-btn {
+  width: 100%; padding: 12px; border-radius: var(--radius-xl);
+  border: 1.5px solid var(--sep); background: transparent;
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  color: var(--label2); cursor: pointer; display: flex;
+  align-items: center; justify-content: center; gap: 8px;
+  transition: all .15s; margin-top: 8px;
+}
+.recur-list-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+/* Recurring view */
+.recur-container { padding: 0 0 20px; }
+.recur-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px 14px; border-bottom: 1px solid var(--sep2);
+  margin-bottom: 14px;
+}
+.recur-back-btn {
+  width: 36px; height: 36px; border-radius: 50%; border: none;
+  background: var(--fill3); cursor: pointer; display: flex;
+  align-items: center; justify-content: center; color: var(--label2);
+}
+.recur-header-title { font-size: 16px; font-weight: 800; color: var(--label); }
+.recur-empty { text-align: center; padding: 48px 20px; color: var(--label3); font-size: 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+
+.recur-card {
+  background: var(--bg2); border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm); margin-bottom: 10px; overflow: hidden;
+}
+.recur-card-row {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+}
+.recur-card-icon {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.recur-card-body { flex: 1; min-width: 0; }
+.recur-card-desc { font-size: 15px; font-weight: 700; color: var(--label); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recur-card-meta { font-size: 11px; color: var(--label3); margin-top: 2px; }
+.recur-card-right { text-align: right; flex-shrink: 0; }
+.recur-card-amt  { font-size: 17px; font-weight: 800; }
+.recur-card-freq { font-size: 10px; color: var(--label3); margin-top: 2px; display: flex; align-items: center; justify-content: flex-end; gap: 3px; }
+.recur-card-actions {
+  display: flex; border-top: 1px solid var(--sep2);
+}
+.recur-action-btn {
+  flex: 1; padding: 10px; border: none; background: transparent;
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  gap: 6px; color: var(--label2); transition: background .15s;
+}
+.recur-action-btn:hover { background: var(--fill4); }
+.recur-action-btn.danger { color: var(--red); }
+.recur-action-btn + .recur-action-btn { border-left: 1px solid var(--sep2); }
+.recur-status-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 700; padding: 2px 7px;
+  border-radius: 10px; margin-left: 8px;
+}
+.recur-status-badge.done { background: var(--green-light); color: var(--green); }
+.recur-status-badge.pending { background: var(--fill4); color: var(--label3); }
+
 /* ── EXPORT / IMPORT ── */
 .hist-actions {
   display: flex; gap: 8px; padding: 0 0 12px;
@@ -866,6 +1131,66 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 .import-result.ok  { background: var(--green-light, #e6f4ea); color: #1e8e3e; }
 .import-result.err { background: #fce8e6; color: #d93025; }
 
+
+
+
+/* ── DONUT MODAL ── */
+.donut-wrap {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 20px; border-bottom: 1px solid var(--sep2); flex-shrink: 0;
+}
+.donut-svg-wrap {
+  position: relative; flex-shrink: 0;
+}
+.donut-center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; pointer-events: none;
+}
+.donut-center-amt { font-size: 18px; font-weight: 800; color: var(--label); line-height: 1.1; }
+.donut-center-lbl { font-size: 11px; color: var(--label3); font-weight: 600; margin-top: 2px; text-align:center; }
+.donut-legend { flex: 1; display: flex; flex-direction: column; gap: 7px; overflow-y: auto; max-height: 200px; }
+.donut-legend-item {
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  padding: 5px 8px; border-radius: var(--radius); transition: background .15s;
+  border: 1.5px solid transparent;
+}
+.donut-legend-item:hover { background: var(--fill4); }
+.donut-legend-item.selected { background: var(--fill3); border-color: var(--sep); }
+.donut-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.donut-legend-name { font-size: 12px; font-weight: 600; color: var(--label2); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.donut-legend-pct { font-size: 11px; color: var(--label3); font-weight: 600; white-space: nowrap; }
+.donut-legend-amt { font-size: 12px; font-weight: 800; white-space: nowrap; }
+.donut-tx-section { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+.donut-tx-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; background: var(--fill3);
+  border-bottom: 1px solid var(--sep2); flex-shrink: 0;
+}
+.donut-tx-header-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.donut-tx-header-name { flex: 1; font-size: 14px; font-weight: 700; color: var(--label); }
+.donut-tx-header-amt { font-size: 14px; font-weight: 800; color: var(--red); }
+/* Donut arc hover */
+.donut-arc { cursor: pointer; transition: opacity .15s; }
+.donut-arc:hover { opacity: .85; }
+.donut-arc.dimmed { opacity: .25; }
+.donut-arc.selected { opacity: 1; filter: brightness(1.1); }
+
+/* ── TYPE MODAL (Revenus/Dépenses) ── */
+.type-modal-section { border-bottom: 2px solid var(--sep2); }
+.type-modal-section:last-child { border-bottom: none; }
+.type-modal-cat-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; background: var(--fill3);
+  position: sticky; top: 0; z-index: 2;
+}
+.type-modal-cat-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.type-modal-cat-name { flex: 1; font-size: 13px; font-weight: 700; color: var(--label); }
+.type-modal-cat-total { font-size: 13px; font-weight: 800; }
+.type-modal-cat-count { font-size: 11px; color: var(--label3); margin-left: 4px; }
 
 /* ── CAT DETAIL MODAL ── */
 .cat-modal-overlay {
@@ -1090,14 +1415,17 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
           <span class="mi" id="topbarExpandIcon">more_horiz</span>
         </button>
         <div class="topbar-icons-wrap" id="topbarIconsWrap">
-          <button class="icon-btn" onclick="showView('overview')" title="Accueil" id="topbarHomeBtn">
+          <button class="icon-btn" onclick="showView('overview');toggleTopbarIcons(false)" title="Accueil" id="topbarHomeBtn">
             <span class="mi">home</span>
+            <span class="topbar-btn-label" data-i18n="overview"></span>
           </button>
-          <button class="icon-btn" onclick="showView('settings')" title="Objectifs" id="topbarSettingsBtn">
+          <button class="icon-btn" onclick="showView('settings');toggleTopbarIcons(false)" title="Objectifs" id="topbarSettingsBtn">
             <span class="mi">tune</span>
+            <span class="topbar-btn-label" data-i18n="settings"></span>
           </button>
-          <button class="icon-btn" onclick="toggleTheme()" title="Thème" id="topbarThemeBtn">
+          <button class="icon-btn" onclick="toggleTheme();toggleTopbarIcons(false)" title="Thème" id="topbarThemeBtn">
             <span class="mi" id="themeIcon">dark_mode</span>
+            <span class="topbar-btn-label" id="topbarThemeLabel">Thème</span>
           </button>
           <button class="user-avatar" id="userAvatarBtn" onclick="toggleUserMenu()" style="display:none">
             <span id="userInitial">?</span>
@@ -1111,25 +1439,27 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
       <!-- OVERVIEW -->
       <div class="view active" id="view-overview">
         <div class="summary-row">
-          <div class="summary-card income">
+          <div class="summary-card income" onclick="openTypeModal('income')" style="cursor:pointer">
             <div class="summary-icon-row">
               <div class="summary-icon"><span class="mi mi-lg">trending_up</span></div>
-              <button class="quick-add-btn" onclick="quickAdd('income')" id="add-income-btn" title="Ajouter un revenu"><span class="mi mi-sm">add</span></button>
+              <button class="quick-add-btn" onclick="event.stopPropagation();quickAdd('income')" id="add-income-btn" title="Ajouter un revenu"><span class="mi mi-sm">add</span></button>
             </div>
             <div class="summary-label" data-i18n="incomeCard"></div>
             <div class="summary-value" id="ov-income">0 $</div>
             <div class="summary-sub"><span data-i18n="target"></span> <strong id="ov-income-target">6 700 $</strong></div>
             <div class="summary-sub" id="ov-income-sub" style="margin-top:2px;font-size:11px"></div>
+            <div class="summary-sub summary-compare" id="ov-income-cmp" style="margin-top:3px;font-size:11px"></div>
           </div>
-          <div class="summary-card expense">
+          <div class="summary-card expense" onclick="openTypeModal('expense')" style="cursor:pointer">
             <div class="summary-icon-row">
               <div class="summary-icon"><span class="mi mi-lg">trending_down</span></div>
-              <button class="quick-add-btn" onclick="quickAdd('expense')" id="add-expense-btn" title="Ajouter une dépense"><span class="mi mi-sm">add</span></button>
+              <button class="quick-add-btn" onclick="event.stopPropagation();quickAdd('expense')" id="add-expense-btn" title="Ajouter une dépense"><span class="mi mi-sm">add</span></button>
             </div>
             <div class="summary-label" data-i18n="expenseCard"></div>
             <div class="summary-value" id="ov-expense">0 $</div>
             <div class="summary-sub"><span data-i18n="target"></span> <strong id="ov-expense-target">4 428 $</strong></div>
             <div class="summary-sub" id="ov-expense-sub" style="margin-top:2px;font-size:11px"></div>
+            <div class="summary-sub summary-compare" id="ov-expense-cmp" style="margin-top:3px;font-size:11px"></div>
           </div>
           <div class="summary-card savings">
             <div class="summary-icon-row">
@@ -1138,10 +1468,11 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
             <div class="summary-label" data-i18n="savingsCard"></div>
             <div class="summary-value" id="ov-savings">0 $</div>
             <div class="summary-sub"><span data-i18n="target"></span> <strong id="ov-savings-target">2 272 $</strong></div>
+            <div class="summary-sub summary-compare" id="ov-savings-cmp" style="margin-top:3px;font-size:11px"></div>
           </div>
         </div>
 
-        <div class="budget-bar-card">
+        <div class="budget-bar-card" onclick="openDonutModal()" style="cursor:pointer">
           <div class="bbc-header">
             <div class="bbc-title" data-i18n="budgetBarTitle"></div>
             <div class="bbc-meta" id="ov-bar-meta"></div>
@@ -1151,6 +1482,10 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
             <span id="ov-bar-min">0 $</span>
             <span id="ov-bar-pct" style="font-weight:600;color:var(--green)">0%</span>
             <span id="ov-bar-max">4 428 $</span>
+          </div>
+          <div style="text-align:center;margin-top:8px;font-size:11px;color:var(--label3);display:flex;align-items:center;justify-content:center;gap:4px">
+            <span class="mi" style="font-size:14px">donut_large</span>
+            <span id="donutHintLabel">Voir le détail par catégorie</span>
           </div>
         </div>
 
@@ -1229,37 +1564,145 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
             </div>
           </div>
 
+          <!-- Recurring toggle -->
+          <div class="recur-toggle-wrap" id="recurToggleWrap">
+            <div class="recur-toggle-row" onclick="toggleRecurring()">
+              <span class="mi" style="font-size:18px;color:var(--label3)">repeat</span>
+              <div class="recur-toggle-label">
+                <div class="recur-toggle-title" id="recurToggleTitle">Transaction récurrente</div>
+                <div class="recur-toggle-sub"   id="recurToggleSub">Se répète automatiquement</div>
+              </div>
+              <div class="recur-switch-track" id="recurSwitchTrack">
+                <div class="recur-switch-thumb"></div>
+              </div>
+            </div>
+            <!-- Expanded options — shown when toggle is ON -->
+            <div class="recur-options" id="recurOptions" style="display:none">
+              <!-- Frequency -->
+              <div class="recur-opt-label" id="recurFreqLabel">Fréquence</div>
+              <div class="recur-freq-grid" id="recurFreqGrid">
+                <button class="recur-freq-btn" data-freq="weekly"      onclick="setRecurFreq('weekly',this)">Hebdo</button>
+                <button class="recur-freq-btn" data-freq="biweekly"    onclick="setRecurFreq('biweekly',this)">2 sem.</button>
+                <button class="recur-freq-btn active" data-freq="monthly" onclick="setRecurFreq('monthly',this)">Mensuel</button>
+                <button class="recur-freq-btn" data-freq="bimonthly"   onclick="setRecurFreq('bimonthly',this)">Bimensuel</button>
+              </div>
+              <!-- End condition -->
+              <div class="recur-opt-label" id="recurEndLabel">Fin de la récurrence</div>
+              <div class="recur-end-row">
+                <div class="recur-end-btns">
+                  <button class="recur-end-btn active" data-end="never"  onclick="setRecurEnd('never',this)"  id="recurEndNever">Sans fin</button>
+                  <button class="recur-end-btn"        data-end="count"  onclick="setRecurEnd('count',this)"  id="recurEndCount">Nb fois</button>
+                  <button class="recur-end-btn"        data-end="date"   onclick="setRecurEnd('date',this)"   id="recurEndDate">Date</button>
+                </div>
+              </div>
+              <div class="recur-end-detail" id="recurEndDetail" style="display:none">
+                <!-- count -->
+                <div id="recurEndCountWrap" style="display:none;align-items:center;gap:12px;width:100%">
+                  <input class="recur-end-input" type="number" id="recurEndCountVal" min="1" max="999" value="12" placeholder="12">
+                  <span class="recur-end-unit" id="recurEndCountUnit">occurrences</span>
+                </div>
+                <!-- date -->
+                <div id="recurEndDateWrap" style="display:none">
+                  <input class="recur-end-input" type="date" id="recurEndDateVal">
+                </div>
+              </div>
+              <!-- Summary -->
+              <div class="recur-summary" id="recurSummary"></div>
+            </div>
+          </div>
+
           <button class="md-submit income-s" id="submitBtn" onclick="addTx()">
             <span class="mi mi-sm">check</span> <span data-i18n="save"></span>
           </button>
+
+          <!-- Recurring list shortcut -->
+          <button class="recur-list-btn" onclick="showView('recurring')" id="recurListBtn">
+            <span class="mi mi-sm">repeat</span>
+            <span id="recurListBtnLabel">Gérer les récurrences</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RECURRING VIEW -->
+      <div class="view" id="view-recurring">
+        <div class="recur-container">
+          <div class="recur-header">
+            <button class="recur-back-btn" onclick="showView('add')">
+              <span class="mi">arrow_back</span>
+            </button>
+            <div class="recur-header-title" id="recurViewTitle">Transactions récurrentes</div>
+          </div>
+          <div class="recur-empty" id="recurEmpty" style="display:none">
+            <span class="mi" style="font-size:40px;color:var(--label3)">repeat</span>
+            <div id="recurEmptyLbl">Aucune transaction récurrente</div>
+          </div>
+          <div id="recurList"></div>
         </div>
       </div>
 
       <!-- HISTORY -->
       <div class="view" id="view-history">
         <div class="history-container">
-          <!-- Export / Import bar -->
-          <div class="hist-actions">
-            <div class="import-result" id="importResult"></div>
-            <button class="hist-action-btn import" onclick="triggerImport()">
-              <span class="mi mi-sm">upload</span>
-              <span id="importBtnLabel">Importer CSV</span>
-            </button>
-            <button class="hist-action-btn" onclick="exportCSV()">
-              <span class="mi mi-sm">download</span>
-              <span id="exportBtnLabel">Exporter CSV</span>
-            </button>
+
+          <!-- Main tab: Transactions | Tendance -->
+          <div class="hist-main-tabs">
+            <button class="hist-main-tab active" id="tabTx"    onclick="switchHistTab('tx')"     id="lbl-tab-tx">Transactions</button>
+            <button class="hist-main-tab"        id="tabChart" onclick="switchHistTab('chart')"  id="lbl-tab-chart">Tendance 6 mois</button>
           </div>
-          <input type="file" id="importFileInput" accept=".csv" style="display:none" onchange="importCSV(event)">
-          <div class="seg-control">
-            <button class="seg-btn active" onclick="filterHist('all',this)" data-i18n="all"></button>
-            <button class="seg-btn" onclick="filterHist('income',this)" data-i18n="revenues"></button>
-            <button class="seg-btn" onclick="filterHist('expense',this)" data-i18n="expenses"></button>
+
+          <!-- TRANSACTIONS PANEL -->
+          <div id="histTxPanel">
+            <!-- Export / Import bar -->
+            <div class="hist-actions">
+              <div class="import-result" id="importResult"></div>
+              <button class="hist-action-btn import" onclick="triggerImport()">
+                <span class="mi mi-sm">upload</span>
+                <span id="importBtnLabel">Importer CSV</span>
+              </button>
+              <button class="hist-action-btn" onclick="exportCSV()">
+                <span class="mi mi-sm">download</span>
+                <span id="exportBtnLabel">Exporter CSV</span>
+              </button>
+            </div>
+            <input type="file" id="importFileInput" accept=".csv" style="display:none" onchange="importCSV(event)">
+            <div class="seg-control">
+              <button class="seg-btn active" onclick="filterHist('all',this)" data-i18n="all"></button>
+              <button class="seg-btn" onclick="filterHist('income',this)" data-i18n="revenues"></button>
+              <button class="seg-btn" onclick="filterHist('expense',this)" data-i18n="expenses"></button>
+            </div>
+            <div class="hist-table">
+              <div class="hist-thead"><div data-i18n="colDate"></div><div data-i18n="colDesc"></div><div data-i18n="colCat"></div><div data-i18n="colAmt"></div><div></div></div>
+              <div id="histBody"></div>
+            </div>
           </div>
-          <div class="hist-table">
-            <div class="hist-thead"><div data-i18n="colDate"></div><div data-i18n="colDesc"></div><div data-i18n="colCat"></div><div data-i18n="colAmt"></div><div></div></div>
-            <div id="histBody"></div>
+
+          <!-- TREND CHART PANEL -->
+          <div id="histChartPanel" style="display:none">
+            <!-- Period selector -->
+            <div class="chart-period-row">
+              <button class="chart-period-btn active" onclick="setChartPeriod(6,this)">6 mois</button>
+              <button class="chart-period-btn"        onclick="setChartPeriod(12,this)">12 mois</button>
+            </div>
+            <!-- Chart card -->
+            <div class="chart-card">
+              <div class="chart-legend">
+                <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--green)"></div><span id="chartLblIncome">Revenus</span></div>
+                <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--red)"></div><span id="chartLblExpense">Dépenses</span></div>
+                <div class="chart-legend-item"><div class="chart-legend-dot" style="background:var(--blue)"></div><span id="chartLblSavings">Épargne</span></div>
+              </div>
+              <div class="chart-scroll-wrap">
+                <svg id="trendSvg" class="trend-svg"></svg>
+              </div>
+              <!-- Tooltip -->
+              <div class="chart-tooltip" id="chartTooltip" style="display:none"></div>
+            </div>
+            <!-- Monthly summary table below chart -->
+            <div class="chart-summary-card">
+              <div class="chart-summary-title" id="chartSummaryTitle">Résumé mensuel</div>
+              <div id="chartSummaryRows"></div>
+            </div>
           </div>
+
         </div>
       </div>
 
@@ -1345,7 +1788,7 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
       </div>
 
     <footer class="app-footer">
-        <div class="footer-version" id="footerVersion">v1.260301.20</div>
+        <div class="footer-version" id="footerVersion">v1.260301.33</div>
         <div class="footer-copy" id="footerCopy">© 2026 Budget 2026</div>
     </footer>
     </div>
@@ -1404,6 +1847,82 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
   </div>
 </div>
 
+
+
+
+<!-- DONUT MODAL -->
+<div class="cat-modal-overlay" id="donutModalOverlay" onclick="closeDonutModal(event)">
+  <div class="cat-modal-sheet" style="max-height:95vh">
+    <div class="cat-modal-handle"></div>
+    <div class="cat-modal-header">
+      <div class="cat-modal-icon" style="background:#fce8e6;color:#d93025;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span class="mi">donut_large</span>
+      </div>
+      <div class="cat-modal-titles">
+        <div class="cat-modal-name" id="donutModalTitle">Dépenses ce mois</div>
+        <div class="cat-modal-meta" id="donutModalMeta"></div>
+      </div>
+      <button class="cat-modal-close" onclick="closeDonutModalDirect()">
+        <span class="mi">close</span>
+      </button>
+    </div>
+    <!-- Donut SVG + Legend -->
+    <div class="donut-wrap">
+      <div class="donut-svg-wrap">
+        <svg id="donutSvg" viewBox="0 0 200 200" width="200" height="200">
+          <circle cx="100" cy="100" r="70" fill="none" stroke="var(--fill4)" stroke-width="30"/>
+          <g id="donutArcs"></g>
+        </svg>
+        <div class="donut-center" id="donutCenter">
+          <div class="donut-center-amt" id="donutCenterAmt">—</div>
+          <div class="donut-center-lbl" id="donutCenterLbl">Total</div>
+        </div>
+      </div>
+      <div class="donut-legend" id="donutLegend"></div>
+    </div>
+    <!-- Transactions for selected category -->
+    <div class="donut-tx-section" id="donutTxSection" style="display:none">
+      <div class="donut-tx-header" id="donutTxHeader"></div>
+      <div class="cat-modal-list" id="donutTxList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TYPE SUMMARY MODAL (Revenus / Dépenses par catégorie) -->
+<div class="cat-modal-overlay" id="typeModalOverlay" onclick="closeTypeModal(event)">
+  <div class="cat-modal-sheet" style="max-height:90vh">
+    <div class="cat-modal-handle"></div>
+    <div class="cat-modal-header">
+      <div class="cat-modal-icon" id="typeModalIcon">
+        <span class="mi" id="typeModalIconGlyph">trending_up</span>
+      </div>
+      <div class="cat-modal-titles">
+        <div class="cat-modal-name" id="typeModalName">Revenus</div>
+        <div class="cat-modal-meta" id="typeModalMeta"></div>
+      </div>
+      <button class="cat-modal-close" onclick="closeTypeModalDirect()">
+        <span class="mi">close</span>
+      </button>
+    </div>
+    <!-- Total bar -->
+    <div class="cat-modal-summary" id="typeModalSummary" style="border-bottom:1px solid var(--sep2)">
+      <div class="cat-modal-stat">
+        <div class="cat-modal-stat-val" id="typeModalTotal">—</div>
+        <div class="cat-modal-stat-lbl" id="typeModalTotalLbl">Total</div>
+      </div>
+      <div class="cat-modal-stat">
+        <div class="cat-modal-stat-val" id="typeModalTarget">—</div>
+        <div class="cat-modal-stat-lbl" id="typeModalTargetLbl">Objectif</div>
+      </div>
+      <div class="cat-modal-stat">
+        <div class="cat-modal-stat-val" id="typeModalCount">—</div>
+        <div class="cat-modal-stat-lbl" id="typeModalCountLbl">Transactions</div>
+      </div>
+    </div>
+    <!-- Categories then transactions -->
+    <div class="cat-modal-list" id="typeModalList"></div>
+  </div>
+</div>
 
 <!-- CAT DETAIL MODAL -->
 <div class="cat-modal-overlay" id="catModalOverlay" onclick="closeCatModal(event)">
@@ -1890,6 +2409,8 @@ function showAuthScreen() {
   document.getElementById('userMenu')?.classList.remove('open');
   document.getElementById('editTxOverlay')?.classList.remove('open');
   document.getElementById('catModalOverlay')?.classList.remove('open');
+  document.getElementById('typeModalOverlay')?.classList.remove('open');
+  document.getElementById('donutModalOverlay')?.classList.remove('open');
   document.getElementById('addCatModal')?.classList.remove('open');
   document.getElementById('addGroupModal')?.classList.remove('open');
   // Show auth screen
@@ -1920,6 +2441,8 @@ function showApp(user) {
   document.getElementById('umName').textContent = name;
   document.getElementById('umEmail').textContent = user.email || '';
   applyI18n();
+  // Load recurring list
+  loadRecurringFromDB();
 }
 
 function toggleUserMenu() {
@@ -2556,12 +3079,36 @@ function previewModalIcon(name) {
   }
 }
 
+function slugify(str) {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g,'') // strip accents
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g,'_')
+    .replace(/^_|_$/g,'');
+}
+
 function confirmModal() {
   const name   = document.getElementById('modal-name').value.trim();
   const budget = parseFloat(document.getElementById('modal-budget').value) || 0;
   if(!name) { document.getElementById('modal-name').focus(); return; }
 
-  const id = 'custom_' + Date.now();
+  // Build stable ID from name
+  const baseSlug = slugify(name) || 'cat';
+  // Check for duplicate name (case-insensitive) in same type
+  const nameLower = name.toLowerCase();
+  const duplicate = CATS.find(c => c.name.toLowerCase() === nameLower && c.type === 'expense');
+  if(duplicate) {
+    toast(LANG==='fr' ? `"${name}" existe déjà` : `"${name}" already exists`, 'warning');
+    document.getElementById('modal-name').select();
+    return;
+  }
+
+  // Ensure unique ID — append _2, _3 etc if slug already taken
+  let id = baseSlug;
+  let suffix = 2;
+  while(CATS.find(c => c.id === id) || GROUPS.find(g => g.id === id)) {
+    id = baseSlug + '_' + suffix++;
+  }
+
   const icon  = guessIcon(name);
   const color = guessColor(name);
 
@@ -2595,19 +3142,31 @@ function confirmGroupModal() {
   const name = document.getElementById('gmodal-name').value.trim();
   if(!name) { document.getElementById('gmodal-name').focus(); return; }
 
-  const id = 'group_' + Date.now();
+  // Duplicate group name check (case-insensitive)
+  const nameLower = name.toLowerCase();
+  const dupGroup = GROUPS.find(g => g.label.toLowerCase() === nameLower);
+  if(dupGroup) {
+    toast(LANG==='fr' ? `"${name}" existe déjà` : `"${name}" already exists`, 'warning');
+    document.getElementById('gmodal-name').select();
+    return;
+  }
+
+  // Slug-based ID for group too
+  const baseSlug = slugify(name) || 'group';
+  let id = 'grp_' + baseSlug;
+  let suffix = 2;
+  while(GROUPS.find(g => g.id === id) || CATS.find(c => c.id === id)) {
+    id = 'grp_' + baseSlug + '_' + suffix++;
+  }
+
   const gColor = guessColor(name);
   const gIcon  = guessIcon(name);
-  const hexToRgba = (hex, a) => {
-    const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
-    return `rgba(${r},${g},${b},${a})`;
-  };
   const gBg = gColor + '18';
   const newGroup = { id, label:name, icon:gIcon, color:gColor, bg:gBg, cats:[], _custom:true };
   GROUPS.push(newGroup);
 
   closeGroupModal();
-  renderSettingsView(); // re-render to show new group
+  renderSettingsView();
   toast(`"${name}" ${t.groupCreated}`, 'check_circle');
 }
 
@@ -2752,6 +3311,256 @@ signOut = async function() {
   return _origSignOut();
 };
 
+
+
+// ── DONUT MODAL ───────────────────────────────────────────────────────────────
+let _donutSelected = null;
+
+function openDonutModal() {
+  _donutSelected = null;
+  const mo = thisMo();
+  const expTxs = mo.filter(t => t.type === 'expense');
+  const total = expTxs.reduce((s, t) => s + t.amount, 0);
+
+  const monthNames = LANG==='fr'
+    ? ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
+    : ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  document.getElementById('donutModalTitle').textContent = LANG==='fr' ? 'Dépenses ce mois' : 'Expenses this month';
+  document.getElementById('donutModalMeta').textContent  = `${monthNames[viewMonth]} ${viewYear} · ${expTxs.length} transactions`;
+  document.getElementById('donutCenterAmt').textContent  = fmt(total);
+  document.getElementById('donutCenterLbl').textContent  = LANG==='fr' ? 'Total dépenses' : 'Total expenses';
+
+  // Group by cat
+  const catMap = {};
+  expTxs.forEach(t => { catMap[t.cat] = (catMap[t.cat]||0) + t.amount; });
+  const entries = Object.entries(catMap)
+    .filter(([,v]) => v > 0)
+    .sort((a,b) => b[1] - a[1]);
+
+  _renderDonut(entries, total);
+
+  document.getElementById('donutTxSection').style.display = 'none';
+  document.getElementById('donutModalOverlay').classList.add('open');
+}
+
+function _renderDonut(entries, total) {
+  const R = 70, cx = 100, cy = 100, strokeW = 30;
+  const circumference = 2 * Math.PI * R;
+  let offset = 0;
+  // Start from top (-90deg = -circumference/4)
+  const startOffset = circumference * 0.25;
+
+  const arcsG = document.getElementById('donutArcs');
+  arcsG.innerHTML = '';
+
+  const legend = document.getElementById('donutLegend');
+  legend.innerHTML = '';
+
+  entries.forEach(([catId, amt], i) => {
+    const cat   = getCat(catId);
+    const pct   = total > 0 ? amt / total : 0;
+    const dash  = pct * circumference;
+    const gap   = circumference - dash;
+    const dashOffset = circumference - offset + startOffset;
+
+    // Arc
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', cx);
+    circle.setAttribute('cy', cy);
+    circle.setAttribute('r', R);
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke', cat.color);
+    circle.setAttribute('stroke-width', strokeW);
+    circle.setAttribute('stroke-dasharray', `${dash} ${gap}`);
+    circle.setAttribute('stroke-dashoffset', dashOffset);
+    circle.setAttribute('class', 'donut-arc');
+    circle.setAttribute('data-cat', catId);
+    circle.addEventListener('click', () => selectDonutCat(catId, amt, cat));
+    arcsG.appendChild(circle);
+
+    offset += dash;
+
+    // Legend item
+    const item = document.createElement('div');
+    item.className = 'donut-legend-item';
+    item.dataset.cat = catId;
+    item.innerHTML = `
+      <div class="donut-legend-dot" style="background:${cat.color}"></div>
+      <div class="donut-legend-name">${cat.name}</div>
+      <div class="donut-legend-pct">${(pct*100).toFixed(0)}%</div>
+      <div class="donut-legend-amt" style="color:${cat.color}">${fmt(amt)}</div>`;
+    item.addEventListener('click', () => selectDonutCat(catId, amt, cat));
+    legend.appendChild(item);
+  });
+}
+
+function selectDonutCat(catId, catTotal, cat) {
+  // Toggle: deselect if same
+  if(_donutSelected === catId) {
+    _donutSelected = null;
+    // Reset all arcs
+    document.querySelectorAll('.donut-arc').forEach(a => { a.classList.remove('selected','dimmed'); });
+    document.querySelectorAll('.donut-legend-item').forEach(i => i.classList.remove('selected'));
+    document.getElementById('donutTxSection').style.display = 'none';
+    // Restore center
+    const mo = thisMo();
+    const total = mo.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+    document.getElementById('donutCenterAmt').textContent = fmt(total);
+    document.getElementById('donutCenterLbl').textContent = LANG==='fr' ? 'Total dépenses' : 'Total expenses';
+    return;
+  }
+
+  _donutSelected = catId;
+
+  // Update arcs
+  document.querySelectorAll('.donut-arc').forEach(a => {
+    a.classList.toggle('selected', a.dataset.cat === catId);
+    a.classList.toggle('dimmed',   a.dataset.cat !== catId);
+  });
+  // Update legend
+  document.querySelectorAll('.donut-legend-item').forEach(i => {
+    i.classList.toggle('selected', i.dataset.cat === catId);
+  });
+
+  // Update center
+  document.getElementById('donutCenterAmt').textContent = fmt(catTotal);
+  document.getElementById('donutCenterLbl').textContent = cat.name;
+
+  // Build transaction list (oldest → newest)
+  const mo = thisMo();
+  const catTxs = mo.filter(t => t.type==='expense' && t.cat===catId)
+                   .sort((a,b) => a.date.localeCompare(b.date));
+
+  const txSection = document.getElementById('donutTxSection');
+  const txHeader  = document.getElementById('donutTxHeader');
+  const txList    = document.getElementById('donutTxList');
+
+  txHeader.innerHTML = `
+    <div class="donut-tx-header-icon" style="background:${cat.color}18;color:${cat.color}">
+      <span class="mi">${cat.icon||'label'}</span>
+    </div>
+    <div class="donut-tx-header-name">${cat.name} <span style="font-size:11px;color:var(--label3);font-weight:500">(${catTxs.length})</span></div>
+    <div class="donut-tx-header-amt">${fmt(catTotal)}</div>`;
+
+  txList.innerHTML = catTxs.length === 0
+    ? `<div class="cat-modal-empty">${LANG==='fr'?'Aucune transaction':'No transactions'}</div>`
+    : catTxs.map(tx => `
+        <div class="cat-modal-tx" onclick="closeDonutModalDirect();openEditTx('${tx.id}')">
+          <div class="cat-modal-tx-icon" style="background:${cat.color}18;color:${cat.color}">
+            <span class="mi">${cat.icon||'label'}</span>
+          </div>
+          <div class="cat-modal-tx-body">
+            <div class="cat-modal-tx-desc">${tx.desc}</div>
+            <div class="cat-modal-tx-date">${fmtDate(tx.date)}</div>
+          </div>
+          <div class="cat-modal-tx-amt" style="color:var(--red)">${fmt(tx.amount)}</div>
+        </div>`).join('');
+
+  txSection.style.display = 'flex';
+  txSection.style.flexDirection = 'column';
+  txSection.style.overflow = 'hidden';
+  txSection.style.flex = '1';
+}
+
+function closeDonutModal(e) {
+  if(e && e.target !== document.getElementById('donutModalOverlay')) return;
+  document.getElementById('donutModalOverlay').classList.remove('open');
+}
+function closeDonutModalDirect() {
+  document.getElementById('donutModalOverlay').classList.remove('open');
+}
+
+// ── TYPE SUMMARY MODAL (Revenus / Dépenses par catégorie) ────────────────────
+function openTypeModal(type) {
+  const mo = thisMo();
+  const typeTxs = mo.filter(t => t.type === type);
+  const total = typeTxs.reduce((s,t) => s+t.amount, 0);
+  const isIncome = type === 'income';
+
+  const monthNames = LANG==='fr'
+    ? ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
+    : ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  // Header
+  const icon = document.getElementById('typeModalIcon');
+  const iconGlyph = document.getElementById('typeModalIconGlyph');
+  const nameEl = document.getElementById('typeModalName');
+  const metaEl = document.getElementById('typeModalMeta');
+  icon.style.cssText = `background:${isIncome?'var(--green-light)':'var(--red-light)'};color:${isIncome?'var(--green)':'var(--red)'};width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0`;
+  iconGlyph.textContent = isIncome ? 'trending_up' : 'trending_down';
+  nameEl.textContent = LANG==='fr' ? (isIncome?'Revenus':'Dépenses') : (isIncome?'Income':'Expenses');
+  metaEl.textContent = `${monthNames[viewMonth]} ${viewYear} · ${typeTxs.length} transaction${typeTxs.length!==1?'s':''}`;
+
+  // Stats
+  document.getElementById('typeModalTotal').textContent = fmt(total);
+  document.getElementById('typeModalTotal').style.color = isIncome ? 'var(--green)' : 'var(--red)';
+  const target = isIncome ? INCOME_TARGET : BUDGET_TOTAL;
+  document.getElementById('typeModalTarget').textContent = fmt(target);
+  document.getElementById('typeModalCount').textContent = typeTxs.length;
+  document.getElementById('typeModalTotalLbl').textContent  = LANG==='fr' ? 'Total' : 'Total';
+  document.getElementById('typeModalTargetLbl').textContent = LANG==='fr' ? 'Objectif' : 'Target';
+  document.getElementById('typeModalCountLbl').textContent  = LANG==='fr' ? 'Transactions' : 'Transactions';
+
+  // Group by category, sorted by total desc
+  const catMap = {};
+  typeTxs.forEach(tx => {
+    if(!catMap[tx.cat]) catMap[tx.cat] = [];
+    catMap[tx.cat].push(tx);
+  });
+
+  // Sort categories by total amount desc
+  const catEntries = Object.entries(catMap).sort((a,b) => {
+    const sa = a[1].reduce((s,t)=>s+t.amount,0);
+    const sb = b[1].reduce((s,t)=>s+t.amount,0);
+    return sb - sa;
+  });
+
+  const list = document.getElementById('typeModalList');
+  list.innerHTML = catEntries.length === 0
+    ? `<div class="cat-modal-empty"><span class="mi" style="font-size:32px;display:block;margin-bottom:8px">inbox</span>${LANG==='fr'?'Aucune transaction ce mois':'No transactions this month'}</div>`
+    : catEntries.map(([catId, catTxs]) => {
+        const cat = getCat(catId);
+        const catTotal = catTxs.reduce((s,t)=>s+t.amount,0);
+        // Sort transactions oldest → newest
+        const sorted = [...catTxs].sort((a,b) => a.date.localeCompare(b.date));
+        const txRows = sorted.map(tx => `
+          <div class="cat-modal-tx" onclick="closeTypeModalDirect();openEditTx('${tx.id}')">
+            <div class="cat-modal-tx-icon" style="background:${cat.color}18;color:${cat.color}">
+              <span class="mi">${cat.icon||'label'}</span>
+            </div>
+            <div class="cat-modal-tx-body">
+              <div class="cat-modal-tx-desc">${tx.desc}</div>
+              <div class="cat-modal-tx-date">${fmtDate(tx.date)}</div>
+            </div>
+            <div class="cat-modal-tx-amt" style="color:${isIncome?'var(--green)':'var(--label)'}">${fmt(tx.amount)}</div>
+          </div>`).join('');
+
+        return `
+          <div class="type-modal-section">
+            <div class="type-modal-cat-header" onclick="openCatModal('${catId}');closeTypeModalDirect()">
+              <div class="type-modal-cat-icon" style="background:${cat.color}18;color:${cat.color}">
+                <span class="mi">${cat.icon||'label'}</span>
+              </div>
+              <div class="type-modal-cat-name">${cat.name}</div>
+              <div class="type-modal-cat-total" style="color:${isIncome?'var(--green)':'var(--red)'}">${fmt(catTotal)}</div>
+              <div class="type-modal-cat-count">(${sorted.length})</div>
+            </div>
+            ${txRows}
+          </div>`;
+      }).join('');
+
+  document.getElementById('typeModalOverlay').classList.add('open');
+}
+
+function closeTypeModal(e) {
+  if(e && e.target !== document.getElementById('typeModalOverlay')) return;
+  document.getElementById('typeModalOverlay').classList.remove('open');
+}
+function closeTypeModalDirect() {
+  document.getElementById('typeModalOverlay').classList.remove('open');
+}
+
 // ── CAT DETAIL MODAL ──────────────────────────────────────────────────────────
 function openCatModal(catId) {
   const cat   = getCat(catId);
@@ -2822,6 +3631,625 @@ function closeCatModal(e) {
 }
 function closeCatModalDirect() {
   document.getElementById('catModalOverlay').classList.remove('open');
+}
+
+
+// ── TREND CHART ───────────────────────────────────────────────────────────────
+let _chartPeriod  = 6;
+let _histTab      = 'tx';
+let _chartHover   = null;
+
+function switchHistTab(tab) {
+  _histTab = tab;
+  const txPanel    = document.getElementById('histTxPanel');
+  const chartPanel = document.getElementById('histChartPanel');
+  document.getElementById('tabTx').classList.toggle('active',    tab === 'tx');
+  document.getElementById('tabChart').classList.toggle('active', tab === 'chart');
+  if(tab === 'tx') {
+    txPanel.style.display    = '';
+    chartPanel.style.display = 'none';
+  } else {
+    txPanel.style.display    = 'none';
+    chartPanel.style.display = '';
+    renderTrendChart();
+  }
+}
+
+function setChartPeriod(n, btn) {
+  _chartPeriod = n;
+  document.querySelectorAll('.chart-period-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderTrendChart();
+}
+
+function renderTrendChart() {
+  const MONTHS_SHORT_FR = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+  const MONTHS_SHORT_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const MS = LANG === 'fr' ? MONTHS_SHORT_FR : MONTHS_SHORT_EN;
+
+  // Build last N months of data
+  const months = [];
+  const now = new Date();
+  for(let i = _chartPeriod - 1; i >= 0; i--) {
+    const d   = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const yr  = d.getFullYear();
+    const mo  = d.getMonth();
+    const mk  = `${yr}-${String(mo+1).padStart(2,'0')}`;
+    const moTxs = txs.filter(t => t.date.startsWith(mk));
+    const income  = moTxs.filter(t => t.type==='income').reduce((s,t)=>s+t.amount, 0);
+    const expense = moTxs.filter(t => t.type==='expense').reduce((s,t)=>s+t.amount, 0);
+    const savings = income - expense;
+    months.push({ mk, label: MS[mo] + (i === _chartPeriod-1 || mo === 0 ? ' ' + String(yr).slice(2) : ''), income, expense, savings, yr, mo });
+  }
+
+  // SVG dimensions
+  const W        = Math.max(months.length * 56, 300);
+  const H        = 180;
+  const PAD_L    = 48;
+  const PAD_R    = 16;
+  const PAD_T    = 16;
+  const PAD_B    = 32;
+  const chartW   = W - PAD_L - PAD_R;
+  const chartH   = H - PAD_T - PAD_B;
+
+  const allVals = months.flatMap(m => [m.income, m.expense, Math.max(m.savings, 0)]);
+  const maxVal  = Math.max(...allVals, 1);
+  const step    = chartW / Math.max(months.length - 1, 1);
+
+  const xOf = i  => PAD_L + i * step;
+  const yOf = v  => PAD_T + chartH - (v / maxVal) * chartH;
+
+  // Y axis gridlines
+  const gridCount = 4;
+  let gridLines = '', yLabels = '';
+  for(let g = 0; g <= gridCount; g++) {
+    const v  = (maxVal * g / gridCount);
+    const yy = yOf(v);
+    gridLines += `<line x1="${PAD_L}" y1="${yy}" x2="${W - PAD_R}" y2="${yy}" stroke="var(--sep2)" stroke-width="1"/>`;
+    const label = v >= 1000 ? (v/1000).toFixed(0)+'k' : v.toFixed(0);
+    yLabels += `<text x="${PAD_L - 6}" y="${yy + 4}" text-anchor="end" font-size="9" fill="var(--label3)">${label}</text>`;
+  }
+
+  // Path builder
+  const pathD = (key, col) => {
+    const pts = months.map((m,i) => `${i===0?'M':'L'}${xOf(i).toFixed(1)},${yOf(m[key]).toFixed(1)}`);
+    return `<path d="${pts.join(' ')}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  };
+
+  // Dots (interactive)
+  const dots = (key, col) => months.map((m,i) => {
+    const cx = xOf(i).toFixed(1), cy = yOf(m[key]).toFixed(1);
+    return `<circle cx="${cx}" cy="${cy}" r="4" fill="${col}" stroke="var(--bg2)" stroke-width="2"
+      class="chart-dot" data-idx="${i}" data-key="${key}"
+      onmouseenter="showChartTooltip(event,${i})" ontouchstart="showChartTooltip(event,${i})"
+      onmouseleave="hideChartTooltip()" style="cursor:pointer"/>`;
+  }).join('');
+
+  // X axis labels
+  const xLabels = months.map((m,i) => {
+    const isCur = m.yr === now.getFullYear() && m.mo === now.getMonth();
+    return `<text x="${xOf(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="10"
+      font-weight="${isCur ? 700 : 400}" fill="${isCur ? 'var(--blue)' : 'var(--label3)'}">${m.label}</text>`;
+  }).join('');
+
+  // Current month vertical marker
+  const curIdx = months.findIndex(m => m.yr === now.getFullYear() && m.mo === now.getMonth());
+  const curMarker = curIdx >= 0
+    ? `<line x1="${xOf(curIdx)}" y1="${PAD_T}" x2="${xOf(curIdx)}" y2="${PAD_T+chartH}" stroke="var(--blue)" stroke-width="1" stroke-dasharray="4,3" opacity=".5"/>`
+    : '';
+
+  const svg = document.getElementById('trendSvg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.innerHTML = gridLines + yLabels + curMarker
+    + pathD('income',  'var(--green)')
+    + pathD('expense', 'var(--red)')
+    + pathD('savings', 'var(--blue)')
+    + dots('income',  'var(--green)')
+    + dots('expense', 'var(--red)')
+    + dots('savings', 'var(--blue)')
+    + xLabels;
+
+  // Store months for tooltip
+  svg._months = months;
+
+  // Summary table
+  const now2 = new Date();
+  const curMk = `${now2.getFullYear()}-${String(now2.getMonth()+1).padStart(2,'0')}`;
+  const hdr = LANG==='fr'
+    ? ['Mois','Revenus','Dépenses','Épargne']
+    : ['Month','Income','Expenses','Savings'];
+  let summaryHtml = `<div class="chart-summary-header"><div>${hdr[0]}</div><div>${hdr[1]}</div><div>${hdr[2]}</div><div>${hdr[3]}</div></div>`;
+  summaryHtml += [...months].reverse().map(m => {
+    const savCol = m.savings >= 0 ? 'var(--green)' : 'var(--red)';
+    const isCur  = m.mk === curMk;
+    const MONTHS_LONG_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    const MONTHS_LONG_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const longLabel = (LANG==='fr' ? MONTHS_LONG_FR : MONTHS_LONG_EN)[m.mo] + ' ' + m.yr;
+    return `<div class="chart-summary-row ${isCur?'active-month':''}" onclick="goToMonthFromChart(${m.yr},${m.mo})">
+      <div class="chart-summary-month">${MS[m.mo]} ${String(m.yr).slice(2)}</div>
+      <div class="chart-summary-income">${fmt(m.income)}</div>
+      <div class="chart-summary-expense">${fmt(m.expense)}</div>
+      <div class="chart-summary-savings" style="color:${savCol}">${fmt(m.savings)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('chartSummaryRows').innerHTML = summaryHtml;
+  document.getElementById('chartSummaryTitle').textContent = LANG==='fr' ? 'Résumé mensuel' : 'Monthly summary';
+}
+
+function showChartTooltip(e, idx) {
+  const svg    = document.getElementById('trendSvg');
+  const months = svg._months;
+  if(!months || !months[idx]) return;
+  const m = months[idx];
+
+  const MONTHS_LONG_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const MONTHS_LONG_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const longLabel = (LANG==='fr' ? MONTHS_LONG_FR : MONTHS_LONG_EN)[m.mo] + ' ' + m.yr;
+  const savCol = m.savings >= 0 ? 'var(--green)' : 'var(--red)';
+
+  const tip = document.getElementById('chartTooltip');
+  tip.innerHTML = `
+    <div class="chart-tooltip-month">${longLabel}</div>
+    <div class="chart-tooltip-row"><span class="chart-tooltip-label"><span class="chart-tooltip-dot" style="background:#1e8e3e"></span>${LANG==='fr'?'Revenus':'Income'}</span><span style="color:#4caf50;font-weight:800">${fmt(m.income)}</span></div>
+    <div class="chart-tooltip-row"><span class="chart-tooltip-label"><span class="chart-tooltip-dot" style="background:#d93025"></span>${LANG==='fr'?'Dépenses':'Expenses'}</span><span style="color:#ef5350;font-weight:800">${fmt(m.expense)}</span></div>
+    <div class="chart-tooltip-row"><span class="chart-tooltip-label"><span class="chart-tooltip-dot" style="background:#1a73e8"></span>${LANG==='fr'?'Épargne':'Savings'}</span><span style="color:${m.savings>=0?'#64b5f6':'#ef9a9a'};font-weight:800">${fmt(m.savings)}</span></div>`;
+
+  // Position tooltip
+  const card = tip.parentElement.getBoundingClientRect();
+  const touch = e.touches ? e.touches[0] : e;
+  let left = touch.clientX - card.left + 12;
+  if(left + 160 > card.width) left = touch.clientX - card.left - 160;
+  tip.style.left = Math.max(4, left) + 'px';
+  tip.style.top  = '10px';
+  tip.style.display = 'block';
+}
+
+function hideChartTooltip() {
+  const tip = document.getElementById('chartTooltip');
+  if(tip) tip.style.display = 'none';
+}
+
+function goToMonthFromChart(yr, mo) {
+  viewYear  = yr;
+  viewMonth = mo;
+  updateMonthNav();
+  loadSettings().then(() => load()).then(() => {
+    showView('overview');
+  }).catch(console.warn);
+}
+
+
+// ── RECURRING TRANSACTIONS ────────────────────────────────────────────────────
+// ── RECURRING TRANSACTIONS ────────────────────────────────────────────────────
+let _isRecurring = false;
+let _recurFreq   = 'monthly';   // weekly | biweekly | monthly | bimonthly
+let _recurEnd    = 'never';     // never | count | date
+let recurringTxs = [];
+
+// ── FREQ / END selectors ──────────────────────────────────────────────────────
+function setRecurFreq(freq, btn) {
+  _recurFreq = freq;
+  document.querySelectorAll('.recur-freq-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  updateRecurSummary();
+}
+
+function setRecurEnd(end, btn) {
+  _recurEnd = end;
+  document.querySelectorAll('.recur-end-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const detail = document.getElementById('recurEndDetail');
+  const cw = document.getElementById('recurEndCountWrap');
+  const dw = document.getElementById('recurEndDateWrap');
+  if(end === 'never') {
+    if(detail) detail.style.display = 'none';
+  } else {
+    if(detail) detail.style.display = 'flex';
+    if(cw) cw.style.display = end === 'count' ? 'flex' : 'none';
+    if(dw) dw.style.display = end === 'date'  ? 'flex' : 'none';
+    if(cw && end === 'count') cw.style.alignItems = 'center';
+  }
+  updateRecurSummary();
+}
+
+function updateRecurSummary() {
+  const el = document.getElementById('recurSummary');
+  if(!el) return;
+  const freqLabels = {
+    weekly:    LANG==='fr' ? 'Chaque semaine'    : 'Every week',
+    biweekly:  LANG==='fr' ? 'Toutes les 2 sem.' : 'Every 2 weeks',
+    monthly:   LANG==='fr' ? 'Chaque mois'       : 'Every month',
+    bimonthly: LANG==='fr' ? '2 fois par mois'   : 'Twice a month',
+  };
+  let endStr = '';
+  if(_recurEnd === 'count') {
+    const n = document.getElementById('recurEndCountVal')?.value || '?';
+    endStr = ' · ' + (LANG==='fr' ? `pendant ${n} occurrences` : `for ${n} occurrences`);
+  } else if(_recurEnd === 'date') {
+    const d = document.getElementById('recurEndDateVal')?.value;
+    endStr = d ? ' · ' + (LANG==='fr' ? `jusqu'au ${d}` : `until ${d}`) : '';
+  } else {
+    endStr = ' · ' + (LANG==='fr' ? 'sans fin' : 'no end');
+  }
+  el.innerHTML = `<span class="mi" style="font-size:14px">repeat</span>${freqLabels[_recurFreq]}${endStr}`;
+}
+
+function toggleRecurring() {
+  _isRecurring = !_isRecurring;
+  const track = document.getElementById('recurSwitchTrack');
+  if(track) track.classList.toggle('on', _isRecurring);
+  const opts = document.getElementById('recurOptions');
+  if(opts) opts.style.display = _isRecurring ? 'flex' : 'none';
+  const sub = document.getElementById('recurToggleSub');
+  if(sub) sub.textContent = _isRecurring
+    ? (LANG==='fr' ? '✓ Configurer ci-dessous' : '✓ Configure below')
+    : (LANG==='fr' ? 'Se répète automatiquement' : 'Repeats automatically');
+  if(_isRecurring) updateRecurSummary();
+}
+
+function resetRecurForm() {
+  _isRecurring = false; _recurFreq = 'monthly'; _recurEnd = 'never';
+  const track = document.getElementById('recurSwitchTrack');
+  if(track) track.classList.remove('on');
+  const opts = document.getElementById('recurOptions');
+  if(opts) opts.style.display = 'none';
+  const sub = document.getElementById('recurToggleSub');
+  if(sub) sub.textContent = LANG==='fr' ? 'Se répète automatiquement' : 'Repeats automatically';
+  document.querySelectorAll('.recur-freq-btn').forEach(b => b.classList.toggle('active', b.dataset.freq === 'monthly'));
+  document.querySelectorAll('.recur-end-btn').forEach(b => b.classList.toggle('active', b.dataset.end === 'never'));
+  const detail = document.getElementById('recurEndDetail');
+  if(detail) detail.style.display = 'none';
+}
+
+// ── FREQ LABELS ───────────────────────────────────────────────────────────────
+function freqLabel(freq) {
+  const m = {
+    weekly:    LANG==='fr' ? 'Hebdomadaire' : 'Weekly',
+    biweekly:  LANG==='fr' ? 'Aux 2 semaines' : 'Bi-weekly',
+    monthly:   LANG==='fr' ? 'Mensuel'     : 'Monthly',
+    bimonthly: LANG==='fr' ? 'Bimensuel'   : 'Bi-monthly',
+  };
+  return m[freq] || freq;
+}
+
+function freqLabelShort(freq) {
+  const m = { weekly:'7j', biweekly:'14j', monthly:'1m', bimonthly:'×2/m' };
+  return m[freq] || freq;
+}
+
+function endLabel(r) {
+  if(r.endType === 'count') {
+    const rem = Math.max(0, (r.endCount||0) - (r.appliedCount||0));
+    return LANG==='fr' ? `${rem} fois restantes` : `${rem} left`;
+  }
+  if(r.endType === 'date') return r.endDate || '';
+  return LANG==='fr' ? 'Sans fin' : 'No end';
+}
+
+// ── PERSISTENCE — table recurring_transactions ────────────────────────────────
+// localStorage = cache local rapide (fallback hors ligne)
+// Supabase     = source de vérité (table dédiée)
+
+function _recurToRow(r) {
+  // Convert JS object → Supabase row (snake_case)
+  return {
+    id:             r.id,
+    user_id:        currentUser.id,
+    type:           r.type,
+    amount:         r.amount,
+    description:    r.desc,
+    category:       r.cat,
+    freq:           r.freq           || 'monthly',
+    day_of_month:   r.dayOfMonth     || 1,
+    start_date:     r.startDate      || null,
+    end_type:       r.endType        || 'never',
+    end_count:      r.endCount       || null,
+    end_date:       r.endDate        || null,
+    applied_count:  r.appliedCount   || 0,
+    applied_dates:  r.appliedDates   || [],
+    last_applied:   r.lastApplied    || null,
+    active:         r.active !== false,
+  };
+}
+
+function _rowToRecur(row) {
+  // Convert Supabase row → JS object (camelCase)
+  return {
+    id:            row.id,
+    type:          row.type,
+    amount:        parseFloat(row.amount),
+    desc:          row.description,
+    cat:           row.category,
+    freq:          row.freq           || 'monthly',
+    dayOfMonth:    row.day_of_month   || 1,
+    startDate:     row.start_date     || null,
+    endType:       row.end_type       || 'never',
+    endCount:      row.end_count      || null,
+    endDate:       row.end_date       || null,
+    appliedCount:  row.applied_count  || 0,
+    appliedDates:  row.applied_dates  || [],
+    lastApplied:   row.last_applied   || null,
+    active:        row.active !== false,
+  };
+}
+
+function _saveToLocalStorage() {
+  try { localStorage.setItem('budget26_recurring_' + (currentUser?.id||''), JSON.stringify(recurringTxs)); } catch(e) {}
+}
+
+function loadRecurring() {
+  // Fallback: load from localStorage only
+  try {
+    const raw = localStorage.getItem('budget26_recurring_' + (currentUser?.id||''));
+    if(raw) recurringTxs = JSON.parse(raw);
+  } catch(e) { recurringTxs = []; }
+}
+
+// Upsert a single recurrence to DB (called after add/update)
+async function _upsertRecurRow(r) {
+  if(!currentUser || _demoMode) return;
+  const { error } = await supa.from('recurring_transactions')
+    .upsert(_recurToRow(r), { onConflict: 'id' });
+  if(error) console.warn('recur upsert error:', error.message);
+}
+
+// Save state changes (active toggle, appliedDates, appliedCount) for one recurrence
+async function _updateRecurState(r) {
+  if(!currentUser || _demoMode) return;
+  const { error } = await supa.from('recurring_transactions')
+    .update({
+      active:        r.active,
+      applied_count: r.appliedCount || 0,
+      applied_dates: r.appliedDates || [],
+      last_applied:  r.lastApplied  || null,
+    })
+    .eq('id', r.id)
+    .eq('user_id', currentUser.id);
+  if(error) console.warn('recur update error:', error.message);
+}
+
+// Delete one recurrence from DB
+async function _deleteRecurRow(id) {
+  if(!currentUser || _demoMode) return;
+  const { error } = await supa.from('recurring_transactions')
+    .delete().eq('id', id).eq('user_id', currentUser.id);
+  if(error) console.warn('recur delete error:', error.message);
+}
+
+// saveRecurring: sync full list to localStorage + upsert all to DB
+// Used after bulk operations (import, apply batch)
+function saveRecurring(ids) {
+  _saveToLocalStorage();
+  if(!currentUser || _demoMode) return;
+  // If specific ids provided, only sync those
+  const toSync = ids ? recurringTxs.filter(r => ids.includes(r.id)) : recurringTxs;
+  toSync.forEach(r => _upsertRecurRow(r).catch(console.warn));
+}
+
+async function loadRecurringFromDB() {
+  if(!currentUser || _demoMode) { loadRecurring(); return; }
+  try {
+    const { data, error } = await supa
+      .from('recurring_transactions')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: true });
+
+    if(error) throw error;
+
+    if(data && data.length > 0) {
+      recurringTxs = data.map(_rowToRecur);
+      _saveToLocalStorage(); // update local cache
+    } else {
+      // No DB data — check localStorage for migration from old format
+      loadRecurring();
+      if(recurringTxs.length > 0) {
+        // Migrate old data to new table
+        console.log('Migrating', recurringTxs.length, 'recurring txs to new table...');
+        for(const r of recurringTxs) {
+          await _upsertRecurRow(r).catch(console.warn);
+        }
+        // Clean up old settings row
+        supa.from('settings')
+          .delete().eq('user_id', currentUser.id).eq('month_key', '__recurring__')
+          .catch(console.warn);
+        toast(LANG==='fr' ? '🔁 Récurrences migrées vers la nouvelle table' : '🔁 Recurring migrated to new table', 'check_circle');
+      }
+    }
+  } catch(e) {
+    console.warn('loadRecurringFromDB failed:', e);
+    loadRecurring(); // fallback to localStorage
+  }
+}
+
+// ── APPLY LOGIC ───────────────────────────────────────────────────────────────
+// Returns list of dates (YYYY-MM-DD) this recurrence should fire within a given month
+function getRecurDatesInMonth(r, yr, mo) {
+  const daysInMonth = new Date(yr, mo+1, 0).getDate();
+  const today = new Date();
+  const isCurrentMonth = yr === today.getFullYear() && mo === today.getMonth();
+  const maxDay = isCurrentMonth ? today.getDate() : daysInMonth;
+  const startDate = new Date(r.startDate || `${yr}-01-01`);
+  const dates = [];
+
+  if(r.freq === 'weekly' || r.freq === 'biweekly') {
+    const interval = r.freq === 'weekly' ? 7 : 14;
+    // Walk from startDate forward by interval until past month
+    let cur = new Date(startDate);
+    // Advance to month
+    const monthStart = new Date(yr, mo, 1);
+    while(cur < monthStart) cur = new Date(cur.getTime() + interval * 86400000);
+    while(cur.getFullYear() === yr && cur.getMonth() === mo && cur.getDate() <= maxDay) {
+      dates.push(`${yr}-${String(mo+1).padStart(2,'0')}-${String(cur.getDate()).padStart(2,'0')}`);
+      cur = new Date(cur.getTime() + interval * 86400000);
+    }
+  } else if(r.freq === 'monthly') {
+    const d = Math.min(r.dayOfMonth || 1, daysInMonth);
+    if(d <= maxDay) dates.push(`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+  } else if(r.freq === 'bimonthly') {
+    // 1st and 15th (or dayOfMonth and dayOfMonth+15)
+    const d1 = Math.min(r.dayOfMonth || 1, daysInMonth);
+    const d2 = Math.min((r.dayOfMonth || 1) + 15, daysInMonth);
+    if(d1 <= maxDay) dates.push(`${yr}-${String(mo+1).padStart(2,'0')}-${String(d1).padStart(2,'0')}`);
+    if(d2 <= maxDay && d2 !== d1) dates.push(`${yr}-${String(mo+1).padStart(2,'0')}-${String(d2).padStart(2,'0')}`);
+  }
+  return dates;
+}
+
+function isRecurExpired(r, dateStr) {
+  if(r.endType === 'date' && r.endDate && dateStr > r.endDate) return true;
+  if(r.endType === 'count' && (r.appliedCount||0) >= (r.endCount||Infinity)) return true;
+  return false;
+}
+
+async function applyRecurringForMonth() {
+  if(!recurringTxs.length) return;
+  const mk = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}`;
+  let applied = 0;
+
+  for(const r of recurringTxs) {
+    if(!r.active) continue;
+    const dates = getRecurDatesInMonth(r, viewYear, viewMonth);
+    for(const dateStr of dates) {
+      if(isRecurExpired(r, dateStr)) continue;
+      // Already applied for this specific date?
+      const key = `${r.id}_${dateStr}`;
+      if((r.appliedDates || []).includes(key)) continue;
+      // Check duplicate
+      const exists = txs.some(t => t.date === dateStr && t.desc === r.desc && t.cat === r.cat && t.amount === r.amount);
+      if(exists) {
+        if(!r.appliedDates) r.appliedDates = [];
+        r.appliedDates.push(key);
+        continue;
+      }
+      const newTx = { id: 'recur_' + key, type: r.type, amount: r.amount, desc: r.desc, date: dateStr, cat: r.cat };
+      txs.unshift(newTx);
+      if(!r.appliedDates) r.appliedDates = [];
+      r.appliedDates.push(key);
+      r.appliedCount = (r.appliedCount || 0) + 1;
+      r.lastApplied  = mk;
+      r._dirty = true;
+      applied++;
+      try { await saveTx(newTx); } catch(e) { console.warn('Recurring save failed', e); }
+    }
+  }
+  if(applied > 0) {
+    _saveToLocalStorage();
+    // Batch update state for all modified recurrences
+    for(const r of recurringTxs) { if(r._dirty) { await _updateRecurState(r).catch(console.warn); delete r._dirty; } }
+    txs.sort((a,b) => b.date.localeCompare(a.date));
+    const msg = LANG==='fr'
+      ? `🔁 ${applied} transaction${applied>1?'s':''} récurrente${applied>1?'s':''} ajoutée${applied>1?'s':''}`
+      : `🔁 ${applied} recurring transaction${applied>1?'s':''} added`;
+    toast(msg, 'repeat');
+    renderOverview();
+  }
+}
+
+// ── RENDER RECURRING VIEW ─────────────────────────────────────────────────────
+function renderRecurringView() {
+  const list  = document.getElementById('recurList');
+  const empty = document.getElementById('recurEmpty');
+  if(!recurringTxs.length) {
+    if(empty) empty.style.display = 'flex';
+    if(list)  list.innerHTML = '';
+    return;
+  }
+  if(empty) empty.style.display = 'none';
+  const mk = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}`;
+
+  list.innerHTML = recurringTxs.map(r => {
+    const cat    = getCat(r.cat);
+    const amtCol = r.type === 'income' ? 'var(--green)' : 'var(--red)';
+    const done   = r.lastApplied === mk;
+    const expired = r.endType === 'count' && (r.appliedCount||0) >= (r.endCount||Infinity)
+                 || r.endType === 'date' && r.endDate && new Date() > new Date(r.endDate);
+
+    const statusBadge = expired
+      ? `<span class="recur-status-badge" style="background:#fce8e6;color:#d93025">⏹ ${LANG==='fr'?'Terminée':'Done'}</span>`
+      : done
+        ? `<span class="recur-status-badge done"><span class="mi" style="font-size:10px">check</span>${LANG==='fr'?'Appliquée':'Applied'}</span>`
+        : `<span class="recur-status-badge pending">${LANG==='fr'?'En attente':'Pending'}</span>`;
+
+    // Progress bar for count-based
+    let progressHtml = '';
+    if(r.endType === 'count' && r.endCount) {
+      const pct = Math.min(((r.appliedCount||0) / r.endCount) * 100, 100);
+      progressHtml = `<div class="recur-progress"><div class="recur-progress-inner" style="width:${pct}%"></div></div>`;
+    }
+
+    return `<div class="recur-card">
+      <div class="recur-card-row">
+        <div class="recur-card-icon" style="background:${cat.color}18;color:${cat.color}">
+          <span class="mi">${cat.icon||'repeat'}</span>
+        </div>
+        <div class="recur-card-body">
+          <div class="recur-card-desc">${r.desc}${statusBadge}
+            <span class="recur-freq-chip"><span class="mi" style="font-size:9px">repeat</span>${freqLabelShort(r.freq||'monthly')}</span>
+          </div>
+          <div class="recur-card-meta">${cat.name} · ${freqLabel(r.freq||'monthly')} · ${endLabel(r)}</div>
+          ${progressHtml}
+        </div>
+        <div class="recur-card-right">
+          <div class="recur-card-amt" style="color:${amtCol}">${r.type==='income'?'+':''}${fmt(r.amount)}</div>
+        </div>
+      </div>
+      <div class="recur-card-actions">
+        <button class="recur-action-btn" onclick="toggleRecurActive('${r.id}')">
+          <span class="mi mi-sm">${r.active ? 'pause' : 'play_arrow'}</span>
+          ${r.active ? (LANG==='fr'?'Suspendre':'Pause') : (LANG==='fr'?'Réactiver':'Resume')}
+        </button>
+        <button class="recur-action-btn" onclick="applyRecurNow('${r.id}')">
+          <span class="mi mi-sm">add_circle</span>
+          ${LANG==='fr'?'Appliquer':'Apply now'}
+        </button>
+        <button class="recur-action-btn danger" onclick="deleteRecur('${r.id}')">
+          <span class="mi mi-sm">delete</span>
+          ${LANG==='fr'?'Supprimer':'Delete'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleRecurActive(id) {
+  const r = recurringTxs.find(x => x.id === id);
+  if(!r) return;
+  r.active = !r.active;
+  _saveToLocalStorage();
+  _updateRecurState(r).catch(console.warn);
+  renderRecurringView();
+}
+
+async function applyRecurNow(id) {
+  const r = recurringTxs.find(x => x.id === id);
+  if(!r) return;
+  const today = new Date();
+  const dateStr = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  const newTx = { id: 'recur_' + r.id + '_manual_' + Date.now(), type: r.type, amount: r.amount, desc: r.desc, date: dateStr, cat: r.cat };
+  txs.unshift(newTx);
+  const mk = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}`;
+  const key = `${r.id}_${dateStr}_m`;
+  if(!r.appliedDates) r.appliedDates = [];
+  r.appliedDates.push(key);
+  r.appliedCount = (r.appliedCount||0) + 1;
+  r.lastApplied = mk;
+  _saveToLocalStorage();
+  await _updateRecurState(r).catch(console.warn);
+  try { await saveTx(newTx); } catch(e) { console.warn(e); }
+  txs.sort((a,b) => b.date.localeCompare(a.date));
+  renderRecurringView(); renderOverview();
+  toast(LANG==='fr'?'✓ Transaction appliquée':'✓ Transaction applied', 'check_circle');
+}
+
+function deleteRecur(id) {
+  recurringTxs = recurringTxs.filter(x => x.id !== id);
+  _saveToLocalStorage();
+  _deleteRecurRow(id).catch(console.warn);
+  renderRecurringView();
+  toast(LANG==='fr'?'Récurrence supprimée':'Recurring deleted', 'delete');
 }
 
 // ── EXPORT / IMPORT CSV ───────────────────────────────────────────────────────
@@ -2969,7 +4397,7 @@ function applyI18n() {
   const fv = document.getElementById('footerVersion');
   const fc = document.getElementById('footerCopy');
   const d  = LANG==='fr' ? '01 Mar 2026' : 'Mar 01, 2026';
-  if(fv) fv.textContent = 'v1.260301.20 · ' + t.updatedOn + ' ' + d;
+  if(fv) fv.textContent = 'v1.260301.33 · ' + t.updatedOn + ' ' + d;
   if(fc) fc.textContent = '© 2026 Budget 2026 · ' + t.allRights;
   // Set topbar title to current view
   const ttEl = document.getElementById('topbarTitle');
@@ -3003,12 +4431,38 @@ function applyI18n() {
   if(dsp) dsp.textContent = t.demoSep  || 'ou';
   if(dbn) dbn.textContent = t.demoMode || 'MODE DÉMO — données fictives';
   if(dbe) dbe.textContent = t.demoExit || 'Quitter';
+  const dhl = document.getElementById('donutHintLabel');
+  if(dhl) dhl.textContent = LANG==='fr' ? 'Voir le détail par catégorie' : 'View breakdown by category';
   // Export/Import labels
   const ebl = document.getElementById('exportBtnLabel');
   const ibl = document.getElementById('importBtnLabel');
   if(ebl) ebl.textContent = t.exportCSV || 'Export CSV';
+  const tbt = document.getElementById('tabTx');
+  const tbc = document.getElementById('tabChart');
+  if(tbt) tbt.textContent = LANG==='fr' ? 'Transactions' : 'Transactions';
+  if(tbc) tbc.textContent = LANG==='fr' ? 'Tendance 6 mois' : '6-month trend';
+  const csi = document.getElementById('chartSummaryTitle');
+  if(csi) csi.textContent = LANG==='fr' ? 'Résumé mensuel' : 'Monthly summary';
+  const cli = document.getElementById('chartLblIncome');
+  const cle = document.getElementById('chartLblExpense');
+  const cls = document.getElementById('chartLblSavings');
+  if(cli) cli.textContent = LANG==='fr' ? 'Revenus'  : 'Income';
+  if(cle) cle.textContent = LANG==='fr' ? 'Dépenses' : 'Expenses';
+  if(cls) cls.textContent = LANG==='fr' ? 'Épargne'  : 'Savings';
   if(ibl) ibl.textContent = t.importCSV || 'Import CSV';
   // Sidebar lang label
+  // Recurring labels
+  const rtt = document.getElementById('recurToggleTitle');
+  const rts = document.getElementById('recurToggleSub');
+  const rlb = document.getElementById('recurListBtn') && document.getElementById('recurListBtnLabel');
+  const rvt = document.getElementById('recurViewTitle');
+  const rel = document.getElementById('recurEmptyLbl');
+  if(rtt) rtt.textContent = LANG==='fr' ? 'Transaction récurrente' : 'Recurring transaction';
+  if(rts && !_isRecurring) rts.textContent = LANG==='fr' ? 'Se répète chaque mois' : 'Repeats every month';
+  const rlbl = document.getElementById('recurListBtnLabel');
+  if(rlbl) rlbl.textContent = LANG==='fr' ? 'Gérer les récurrences' : 'Manage recurring';
+  if(rvt) rvt.textContent = LANG==='fr' ? 'Transactions récurrentes' : 'Recurring transactions';
+  if(rel) rel.textContent = LANG==='fr' ? 'Aucune transaction récurrente' : 'No recurring transactions';
   const sll = document.getElementById('sidebarLangLabel');
   if(sll) sll.textContent = t.language;
 }
@@ -3039,13 +4493,16 @@ function setLang(lang) {
 const titles = { overview:t.overview, add:t.add, history:t.history, settings:t.settings };
 let _topbarExpanded = false;
 
-function toggleTopbarIcons() {
-  _topbarExpanded = !_topbarExpanded;
+function toggleTopbarIcons(forceClose) {
+  if(forceClose === false) {
+    _topbarExpanded = false;
+  } else {
+    _topbarExpanded = !_topbarExpanded;
+  }
   const wrap = document.getElementById('topbarIconsWrap');
   const icon = document.getElementById('topbarExpandIcon');
   if(wrap) wrap.classList.toggle('expanded', _topbarExpanded);
   if(icon) icon.textContent = _topbarExpanded ? 'close' : 'more_horiz';
-  // Auto-close when clicking away
   if(_topbarExpanded) {
     setTimeout(() => {
       document.addEventListener('click', _autoCollapseTopbar, { once: true });
@@ -3089,8 +4546,12 @@ function showView(id){
   document.getElementById('monthNavWrap').style.display=isOv?'flex':'none';
   document.getElementById('mnToday').style.display=isOv?'':'none';
   if(id==='overview') renderOverview();
-  if(id==='history')  renderHistory();
-  if(id==='settings') renderSettingsView();
+  if(id==='history') {
+    renderHistory();
+    if(_histTab === 'chart') renderTrendChart();
+  }
+  if(id==='settings')   renderSettingsView();
+  if(id==='recurring')  renderRecurringView();
 }
 
 function toggleSidebar(){
@@ -3164,7 +4625,29 @@ async function addTx(){
     document.getElementById('f-amount').value='';
     document.getElementById('f-desc').value='';
     document.getElementById('f-date').value=today();
-    toast(`${currentType==='income'?t.incomeLabel:t.expenseLabel} ${fmtD(amount)} ${t.txSaved}`);
+  // Save as recurring if toggle is on
+  if(_isRecurring) {
+    const dayOfMonth = parseInt(date.split('-')[2]) || 1;
+    const recurId = 'r_' + Date.now();
+    // End condition
+    const endCountVal = parseInt(document.getElementById('recurEndCountVal')?.value) || 12;
+    const endDateVal  = document.getElementById('recurEndDateVal')?.value || '';
+    recurringTxs.push({
+      id: recurId, type: currentType, amount, desc, cat,
+      freq: _recurFreq, dayOfMonth, startDate: date, active: true,
+      endType: _recurEnd,
+      endCount: _recurEnd === 'count' ? endCountVal : null,
+      endDate:  _recurEnd === 'date'  ? endDateVal  : null,
+      appliedCount: 1, appliedDates: [`${recurId}_${date}`],
+      lastApplied: `${viewYear}-${String(viewMonth+1).padStart(2,'0')}`
+    });
+    _saveToLocalStorage();
+    // Persist the new recurrence to DB
+    _upsertRecurRow(recurringTxs[recurringTxs.length - 1]).catch(console.warn);
+    resetRecurForm();
+  }
+
+  toast(`${currentType==='income'?t.incomeLabel:t.expenseLabel} ${fmtD(amount)} ${t.txSaved}`);
     showView('overview');
   } catch(e) {
     // Remove from local array if DB save failed
@@ -3342,6 +4825,35 @@ function renderOverview(){
     expSub.style.color = expPct<70?'var(--green)':expPct<90?'var(--orange)':'var(--red)';
   }
 
+  // ── Month vs previous month comparison ───────────────────────────────────────
+  const prevD  = new Date(viewYear, viewMonth - 1, 1);
+  const prevMk = `${prevD.getFullYear()}-${String(prevD.getMonth()+1).padStart(2,'0')}`;
+  const prevMo = txs.filter(t => t.date.startsWith(prevMk));
+  const prevIncome  = prevMo.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const prevExpense = prevMo.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const prevSavings = prevIncome - prevExpense;
+
+  const hasPrev = prevMo.length > 0;
+  const vsLbl   = LANG==='fr' ? 'vs mois préc.' : 'vs prev month';
+
+  function cmpBadge(cur, prev, lowerIsBetter) {
+    if(!hasPrev || prev === 0) return '';
+    const diff   = cur - prev;
+    const diffPct = Math.abs(diff / prev * 100);
+    if(diffPct < 0.5) return `<span class="cmp-badge neu">= </span><span class="cmp-lbl">${vsLbl}</span>`;
+    const isGood = lowerIsBetter ? diff < 0 : diff > 0;
+    const arrow  = diff > 0 ? '▲' : '▼';
+    const cls    = isGood ? 'up' : 'down';
+    return `<span class="cmp-badge ${cls}">${arrow} ${diffPct.toFixed(0)}%</span><span class="cmp-lbl">${vsLbl}</span>`;
+  }
+
+  const icEl = document.getElementById('ov-income-cmp');
+  const exEl = document.getElementById('ov-expense-cmp');
+  const saEl = document.getElementById('ov-savings-cmp');
+  if(icEl) icEl.innerHTML = cmpBadge(income,  prevIncome,  false);
+  if(exEl) exEl.innerHTML = cmpBadge(expense, prevExpense, true);
+  if(saEl) saEl.innerHTML = cmpBadge(savings, prevSavings, false);
+
   // ── Quick-add button tooltips ────────────────────────────────────────────────
   const aib = document.getElementById('add-income-btn');
   const aeb = document.getElementById('add-expense-btn');
@@ -3509,22 +5021,93 @@ async function init(){
     showAuthScreen();
   }
 
-  // Listen for auth changes
+  // Listen for auth changes (includes TOKEN_REFRESHED)
   supa.auth.onAuthStateChange(async (event, session) => {
     try {
-      if(event === 'SIGNED_IN' && session) {
-        showApp(session.user);
-        await loadSettings();
-        await load();
-        renderOverview();
+      if((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+        if(!currentUser) {
+          // Was logged out — full reload
+          showApp(session.user);
+          await loadSettings();
+          await load();
+          renderOverview();
+        } else {
+          // Just a token refresh — silently update user, no reload
+          currentUser = session.user;
+        }
       } else if(event === 'SIGNED_OUT') {
         txs = [];
+        currentUser = null;
         showAuthScreen();
       }
     } catch(e) {
       console.error('Auth change error:', e);
     }
   });
+
+  // ── Visibility / focus: refresh session when app comes back to foreground ──
+  let _lastActiveAt = Date.now();
+  let _refreshing   = false;
+
+  async function _onResume() {
+    if(_demoMode || _refreshing || !currentUser) return;
+    const elapsed = Date.now() - _lastActiveAt;
+    // Only act if app was in background for > 30 seconds
+    if(elapsed < 30_000) return;
+
+    _refreshing = true;
+    try {
+      // Try to get a fresh session — Supabase refreshes token automatically
+      const { data, error } = await Promise.race([
+        supa.auth.getSession(),
+        new Promise((_,r) => setTimeout(()=>r(new Error('timeout')), 6000))
+      ]);
+
+      if(error || !data?.session) {
+        // Session truly expired → back to login
+        console.warn('Session expired after background:', error?.message);
+        currentUser = null;
+        txs = [];
+        showAuthScreen();
+        toast(LANG==='fr' ? 'Session expirée — reconnectez-vous' : 'Session expired — please sign in again', 'error');
+        return;
+      }
+
+      // Session still valid — silently reload data if elapsed > 5 min
+      currentUser = data.session.user;
+      if(elapsed > 300_000) {
+        await load();
+        const curView = document.querySelector('.view.active');
+        const id = curView?.id.replace('view-','');
+        if(id === 'overview') renderOverview();
+        if(id === 'history')  renderHistory();
+      }
+    } catch(e) {
+      console.warn('Resume refresh failed:', e);
+    } finally {
+      _refreshing = false;
+    }
+  }
+
+  // visibilitychange fires on iOS Safari when switching apps/tabs
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'hidden') {
+      _lastActiveAt = Date.now();
+    } else {
+      _onResume();
+    }
+  });
+
+  // focus fires on desktop and some Android browsers
+  window.addEventListener('focus', _onResume);
+
+  // Proactive token refresh every 10 min while app is visible
+  setInterval(async () => {
+    if(_demoMode || !currentUser || document.visibilityState !== 'visible') return;
+    try {
+      await supa.auth.refreshSession();
+    } catch(e) { console.warn('Periodic refresh failed:', e); }
+  }, 10 * 60 * 1000);
 }
 init();
 
