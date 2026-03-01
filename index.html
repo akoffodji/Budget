@@ -741,23 +741,23 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 }
 .scope-toggle-wrap {
   display: flex; align-items: center; gap: 12px; cursor: pointer;
+  user-select: none; -webkit-user-select: none;
 }
 .scope-info { flex: 1; }
 .scope-title { font-size: 14px; font-weight: 600; color: var(--label); }
 .scope-sub { font-size: 12px; color: var(--label3); margin-top: 2px; }
-.scope-checkbox { display: none; }
-.scope-switch {
+.scope-switch-track {
   width: 44px; height: 26px; border-radius: 100px;
-  background: var(--sep); cursor: pointer; position: relative;
+  background: var(--sep); position: relative;
   transition: background .25s; flex-shrink: 0;
 }
-.scope-switch::after {
-  content: ''; position: absolute; width: 20px; height: 20px;
+.scope-switch-track.on { background: var(--blue); }
+.scope-switch-thumb {
+  position: absolute; width: 20px; height: 20px;
   border-radius: 50%; background: #fff; top: 3px; left: 3px;
   transition: transform .25s; box-shadow: 0 1px 3px rgba(0,0,0,.3);
 }
-.scope-checkbox:checked ~ .scope-switch { background: var(--blue); }
-.scope-checkbox:checked ~ .scope-switch::after { transform: translateX(18px); }
+.scope-switch-track.on .scope-switch-thumb { transform: translateX(18px); }
 .scope-badge {
   margin-top: 10px; padding: 6px 10px; background: var(--blue-light);
   border-radius: var(--radius); font-size: 12px; font-weight: 600; color: var(--blue);
@@ -1085,14 +1085,15 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 
           <!-- Month scope toggle -->
           <div class="settings-month-scope" id="settingsMonthScope">
-            <label class="scope-toggle-wrap">
+            <div class="scope-toggle-wrap" onclick="toggleMonthScope()">
               <div class="scope-info">
                 <div class="scope-title" id="scopeTitle">Appliquer à ce mois seulement</div>
-                <div class="scope-sub" id="scopeSub">Sinon s'applique à tous les mois</div>
+                <div class="scope-sub" id="scopeSub">Par défaut pour tous les mois</div>
               </div>
-              <input type="checkbox" id="settings-apply-month" class="scope-checkbox">
-              <div class="scope-switch" onclick="document.getElementById('settings-apply-month').click();updateScopeLabel()"></div>
-            </label>
+              <div class="scope-switch-track" id="scopeSwitchTrack">
+                <div class="scope-switch-thumb"></div>
+              </div>
+            </div>
             <div class="scope-badge" id="scopeBadge" style="display:none"></div>
           </div>
 
@@ -1104,7 +1105,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
       </div>
 
     <footer class="app-footer">
-        <div class="footer-version" id="footerVersion">v1.260301.2</div>
+        <div class="footer-version" id="footerVersion">v1.260301.3</div>
         <div class="footer-copy" id="footerCopy">© 2026 Budget 2026</div>
     </footer>
     </div>
@@ -1830,7 +1831,7 @@ async function saveSettings() {
   if(btn) { btn.disabled = true; btn.innerHTML = `<span class="mi mi-sm">hourglass_empty</span> ${t.saving}`; }
 
   try {
-    const applyToMonth = document.getElementById('settings-apply-month')?.checked;
+    const applyToMonth = _monthScopeOn;
     const mk = applyToMonth ? currentMonthKey() : null;
 
     // Always save base (structure: cat names, groups, custom cats)
@@ -1863,8 +1864,17 @@ async function saveSettings() {
   }
 }
 
+let _monthScopeOn = false;
+
+function toggleMonthScope() {
+  _monthScopeOn = !_monthScopeOn;
+  const track = document.getElementById('scopeSwitchTrack');
+  if(track) track.classList.toggle('on', _monthScopeOn);
+  updateScopeLabel();
+}
+
 function updateScopeLabel() {
-  const checked = document.getElementById('settings-apply-month')?.checked;
+  const checked = _monthScopeOn;
   const badge   = document.getElementById('scopeBadge');
   const monthNames = LANG==='fr'
     ? ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
@@ -1910,8 +1920,9 @@ function renderSettingsView() {
   updateScopeLabel();
 
   // Pre-check month toggle if current month already has an override
-  const applyChk = document.getElementById('settings-apply-month');
-  if(applyChk) applyChk.checked = !!userSettings.has_month_override;
+  _monthScopeOn = !!userSettings.has_month_override;
+  const track = document.getElementById('scopeSwitchTrack');
+  if(track) track.classList.toggle('on', _monthScopeOn);
 
   const container = document.getElementById('settingsCatSections');
   container.innerHTML = '';
@@ -2235,7 +2246,7 @@ function applyI18n() {
   const fv = document.getElementById('footerVersion');
   const fc = document.getElementById('footerCopy');
   const d  = LANG==='fr' ? '01 Mar 2026' : 'Mar 01, 2026';
-  if(fv) fv.textContent = 'v1.260301.2 · ' + t.updatedOn + ' ' + d;
+  if(fv) fv.textContent = 'v1.260301.3 · ' + t.updatedOn + ' ' + d;
   if(fc) fc.textContent = '© 2026 Budget 2026 · ' + t.allRights;
   // Set topbar title to current view
   const ttEl = document.getElementById('topbarTitle');
