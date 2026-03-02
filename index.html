@@ -4440,31 +4440,103 @@ let _newsTopic   = 'finance';
 let _newsLoading = false;
 let _newsCache   = {};
 
-// rss2json.com — free tier, no API key needed, handles CORS
+// Multiple RSS sources per topic for reliability
 const NEWS_TOPICS = {
-  finance:    'https://finance.yahoo.com/news/rssindex',
-  stocks:     'https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT,GOOGL,AMZN,TSLA',
-  crypto:     'https://feeds.finance.yahoo.com/rss/2.0/headline?s=BTC-USD,ETH-USD,BNB-USD',
-  economy:    'https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EDJI,%5EIXIC',
-  realestate: 'https://feeds.finance.yahoo.com/rss/2.0/headline?s=VNQ,IYR,RDFN',
+  finance: [
+    'https://feeds.bbci.co.uk/news/business/rss.xml',
+    'https://www.ft.com/rss/home/french',
+    'https://rss.lemonde.fr/c3s/rss/sequence/0/0/82.xml',
+  ],
+  stocks: [
+    'https://feeds.bbci.co.uk/news/business/rss.xml',
+    'https://www.investing.com/rss/news_14.rss',
+    'https://feeds.reuters.com/reuters/businessNews',
+  ],
+  crypto: [
+    'https://coinjournal.net/fr/feed/',
+    'https://cointelegraph.com/rss',
+    'https://coindesk.com/arc/outboundfeeds/rss/',
+  ],
+  economy: [
+    'https://feeds.bbci.co.uk/news/business/rss.xml',
+    'https://feeds.reuters.com/reuters/businessNews',
+    'https://www.lesechos.fr/rss/rss_la_une.xml',
+  ],
+  realestate: [
+    'https://feeds.bbci.co.uk/news/business/rss.xml',
+    'https://www.seloger.com/actualites/feed/',
+    'https://www.challenges.fr/immobilier/feed/',
+  ],
 };
 
-async function _fetchRSS(rssUrl) {
-  // rss2json converts any RSS to JSON with no CORS issues
-  const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=25`;
+// CORS proxy list — tried in order until one works
+const CORS_PROXIES = [
+  url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+];
+
+async function _fetchRSSWithProxy(rssUrl) {
+  for(const makeProxyUrl of CORS_PROXIES) {
+    try {
+      const proxyUrl = makeProxyUrl(rssUrl);
+      const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
+      if(!r.ok) continue;
+      const data = await r.json();
+      // allorigins returns { contents: "..." }
+      const xmlText = data.contents || data.body || (typeof data === 'string' ? data : null);
+      if(!xmlText) continue;
+      const items = _parseRSSXML(xmlText, rssUrl);
+      if(items && items.length) return items;
+    } catch(e) { continue; }
+  }
+  return null;
+}
+
+function _parseRSSXML(xmlText, sourceUrl) {
   try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
-    if(!r.ok) return null;
-    const data = await r.json();
-    if(data.status !== 'ok' || !data.items?.length) return null;
-    return data.items.map(i => ({
-      title:   i.title || '',
-      link:    i.link  || '',
-      source:  i.author || data.feed?.title || 'Yahoo Finance',
-      pubDate: i.pubDate || '',
-      img:     i.thumbnail || i.enclosure?.link || null,
-    }));
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xmlText, 'text/xml');
+    const items = Array.from(doc.querySelectorAll('item, entry'));
+    if(!items.length) return null;
+
+    // Guess source name from feed title or domain
+    const feedTitle = doc.querySelector('channel > title, feed > title')?.textContent?.trim()
+      || new URL(sourceUrl).hostname.replace('www.','').replace('feeds.','');
+
+    return items.slice(0, 20).map(item => {
+      const title   = item.querySelector('title')?.textContent?.trim() || '';
+      const link    = item.querySelector('link')?.textContent?.trim()
+                   || item.querySelector('link')?.getAttribute('href') || '';
+      const pubDate = item.querySelector('pubDate, published, updated')?.textContent?.trim() || '';
+      const source  = item.querySelector('source')?.textContent?.trim() || feedTitle;
+
+      // Try to find an image
+      let img = null;
+      const enclosure = item.querySelector('enclosure[type^="image"]');
+      if(enclosure) img = enclosure.getAttribute('url');
+      if(!img) {
+        const media = item.querySelector('thumbnail, content[medium="image"]');
+        if(media) img = media.getAttribute('url');
+      }
+      if(!img) {
+        const desc = item.querySelector('description, summary')?.textContent || '';
+        const m = desc.match(/<img[^>]+src=["']([^"']+)["']/i);
+        if(m) img = m[1];
+      }
+
+      return { title, link, source, pubDate, img };
+    }).filter(i => i.title && i.link);
   } catch(e) { return null; }
+}
+
+async function _fetchRSS(topic) {
+  const urls = NEWS_TOPICS[topic] || NEWS_TOPICS.finance;
+  for(const url of urls) {
+    const items = await _fetchRSSWithProxy(url);
+    if(items && items.length) return items;
+  }
+  return null;
 }
 
 function setNewsTopic(topic, btn) {
@@ -4489,7 +4561,7 @@ function _loadNews() {
     <span>${isFr ? 'Chargement…' : 'Loading…'}</span>
   </div>`;
 
-  _fetchRSS(NEWS_TOPICS[_newsTopic]).then(items => {
+  _fetchRSS(_newsTopic).then(items => {
     if(!items || !items.length) { _renderNewsError(); return; }
     _newsCache[_newsTopic] = { items, ts: Date.now() };
     _renderNews(items);
