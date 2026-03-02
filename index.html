@@ -112,15 +112,15 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 /* SIDEBAR */
 .sidebar { width:256px; background:var(--bg2); border-right:1px solid var(--sep2); display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:300; transform:translateX(-100%); transition:transform .28s cubic-bezier(.4,0,.2,1); padding-top:env(safe-area-inset-top, 0px); }
 .sidebar.open { transform:translateX(0); box-shadow:var(--shadow-lg); }
-.sidebar-overlay { position:fixed; inset:0; background:rgba(0,0,0,.32); z-index:299; opacity:0; pointer-events:none; transition:opacity .28s; }
+.sidebar-overlay { position:fixed; inset:0; background:rgba(0,0,0,.32); z-index:299; opacity:0; pointer-events:none; transition:opacity .3s cubic-bezier(.4,0,.2,1); }
 .sidebar-overlay.open { opacity:1; pointer-events:all; }
 .sidebar-header { padding:20px 16px 14px; border-bottom:1px solid var(--sep2); }
 .sidebar-logo { display:flex; align-items:center; gap:10px; font-family:'Google Sans Display',sans-serif; font-size:17px; font-weight:700; color:var(--blue); }
 .sidebar-month { font-size:11px; color:var(--label3); margin-top:4px; padding-left:34px; }
 .sidebar-nav { padding:8px; flex:1; }
 .nav-section-label { font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--label3); padding:8px 12px 4px; }
-.nav-item { display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:100px; cursor:pointer; border:none; background:none; width:100%; text-align:left; color:var(--label2); font-size:14px; font-weight:500; font-family:inherit; transition:background .15s; margin-bottom:2px; }
-.nav-item:hover { background:var(--fill3); }
+.nav-item { display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:100px; cursor:pointer; border:none; background:none; width:100%; text-align:left; color:var(--label2); font-size:14px; font-weight:500; font-family:inherit; transition:background .2s cubic-bezier(.4,0,.2,1), color .2s, transform .12s; margin-bottom:2px; }
+.nav-item:hover { background:var(--fill3); transform:translateX(2px); }
 .nav-item.active { background:var(--blue-light); color:var(--blue); font-weight:600; }
 .nav-item.active .nav-icon { color:var(--blue); }
 .nav-icon { color:var(--label3); flex-shrink:0; }
@@ -217,18 +217,30 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 .month-nav-btn { width:26px; height:26px; border:none; background:none; border-radius:50%; cursor:pointer; color:var(--label2); display:flex; align-items:center; justify-content:center; transition:background .15s; }
 .month-nav-btn:hover { background:var(--fill2); }
 .month-nav-btn:disabled { opacity:.3; cursor:default; }
-.month-nav-label { font-size:12px; font-weight:600; color:var(--label); padding:0 4px; min-width:100px; text-align:center; white-space:nowrap; }
+.month-nav-label { font-size:12px; font-weight:600; color:var(--label); padding:0 4px; min-width:100px; text-align:center; white-space:nowrap; transition:opacity .15s; }
 .month-today-btn { font-size:12px; font-weight:600; color:var(--blue); padding:6px 10px; border-radius:100px; border:none; background:none; cursor:pointer; font-family:inherit; transition:background .15s; }
 .month-today-btn:hover { background:var(--blue-light); }
 .month-today-btn.hidden { visibility:hidden; }
 
 .content { padding:16px; width:100%; box-sizing:border-box; }
-.view { display:none; }
-.view.active { display:block; }
+.view {
+  display: none;
+  opacity: 0;
+  transform: translateY(8px);
+}
+.view.active {
+  display: block;
+  animation: viewIn .22s cubic-bezier(.4,0,.2,1) forwards;
+}
+@keyframes viewIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 /* SUMMARY */
 .summary-row { display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:12px; }
-.summary-card { background:var(--bg2); border-radius:var(--radius-xl); padding:18px; box-shadow:var(--shadow-sm); position:relative; overflow:hidden; }
+.summary-card { background:var(--bg2); border-radius:var(--radius-xl); padding:18px; box-shadow:var(--shadow-sm); position:relative; overflow:hidden; transition:transform .18s cubic-bezier(.4,0,.2,1), box-shadow .18s; cursor:default; }
+.summary-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
 .summary-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
 .summary-card.income::before { background:var(--green); }
 .summary-card.expense::before { background:var(--red); }
@@ -379,7 +391,7 @@ body { font-family:'Google Sans',-apple-system,sans-serif; background:var(--bg);
 /* HISTORY */
 .history-container { max-width:100%; width:100%; }
 .seg-control { display:inline-flex; background:var(--fill3); border-radius:var(--radius); padding:2px; margin-bottom:14px; }
-.seg-btn { padding:7px 18px; border-radius:calc(var(--radius) - 2px); border:none; background:none; font-family:inherit; font-size:13px; font-weight:600; color:var(--label3); cursor:pointer; transition:all .15s; }
+.seg-btn { padding:7px 18px; border-radius:calc(var(--radius) - 2px); border:none; background:none; font-family:inherit; font-size:13px; font-weight:600; color:var(--label3); cursor:pointer; transition:background .2s cubic-bezier(.4,0,.2,1), color .2s, box-shadow .2s, transform .12s; }
 .seg-btn.active { background:var(--bg2); color:var(--label); box-shadow:var(--shadow-sm); }
 .hist-table { background:var(--bg2); border-radius:var(--radius-xl); overflow:hidden; box-shadow:var(--shadow-sm); }
 .hist-thead { display:grid; grid-template-columns:80px 1fr 140px 110px 36px; padding:10px 16px; background:var(--fill4); border-bottom:1px solid var(--sep2); font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--label3); }
@@ -1144,8 +1156,8 @@ input[type="date"].recur-end-input { width: auto; flex: 1; text-align: left; }
 
 /* ── DONUT MODAL ── */
 .donut-wrap {
-  display: flex; align-items: center; gap: 16px;
-  padding: 16px 20px; border-bottom: 1px solid var(--sep2); flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 16px 16px 0; border-bottom: 1px solid var(--sep2); flex-shrink: 0;
 }
 .donut-svg-wrap {
   position: relative; flex-shrink: 0;
@@ -1156,18 +1168,22 @@ input[type="date"].recur-end-input { width: auto; flex: 1; text-align: left; }
 }
 .donut-center-amt { font-size: 18px; font-weight: 800; color: var(--label); line-height: 1.1; }
 .donut-center-lbl { font-size: 11px; color: var(--label3); font-weight: 600; margin-top: 2px; text-align:center; }
-.donut-legend { flex: 1; display: flex; flex-direction: column; gap: 7px; overflow-y: auto; max-height: 200px; }
+.donut-legend {
+  width: 100%; display: grid; grid-template-columns: 1fr 1fr;
+  gap: 4px 8px; overflow-y: auto; max-height: 220px;
+  padding: 8px 4px; box-sizing: border-box;
+}
 .donut-legend-item {
-  display: flex; align-items: center; gap: 8px; cursor: pointer;
-  padding: 5px 8px; border-radius: var(--radius); transition: background .15s;
-  border: 1.5px solid transparent;
+  display: flex; align-items: center; gap: 7px; cursor: pointer;
+  padding: 6px 8px; border-radius: var(--radius); transition: background .15s;
+  border: 1.5px solid transparent; min-width: 0;
 }
 .donut-legend-item:hover { background: var(--fill4); }
 .donut-legend-item.selected { background: var(--fill3); border-color: var(--sep); }
-.donut-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.donut-legend-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
 .donut-legend-name { font-size: 12px; font-weight: 600; color: var(--label2); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.donut-legend-pct { font-size: 11px; color: var(--label3); font-weight: 600; white-space: nowrap; }
-.donut-legend-amt { font-size: 12px; font-weight: 800; white-space: nowrap; }
+.donut-legend-pct { font-size: 11px; color: var(--label3); font-weight: 600; white-space: nowrap; margin-left: auto; }
+.donut-legend-amt { display: none; }
 .donut-tx-section { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 .donut-tx-header {
   display: flex; align-items: center; gap: 10px;
@@ -1211,7 +1227,7 @@ input[type="date"].recur-end-input { width: auto; flex: 1; text-align: left; }
   width: 100%; max-width: 600px; margin: 0 auto;
   background: var(--bg); border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   max-height: 80vh; display: flex; flex-direction: column;
-  transform: translateY(100%); transition: transform .35s cubic-bezier(.32,1.02,.58,1);
+  transform: translateY(100%); transition: transform .38s cubic-bezier(.25,1.1,.5,1);
   padding-bottom: env(safe-area-inset-bottom);
 }
 .cat-modal-overlay.open .cat-modal-sheet { transform: translateY(0); }
@@ -1303,6 +1319,42 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
   .hist-cat,.hist-thead-cat{display:none}
   .md-row{grid-template-columns:1fr}
 }
+
+/* ── NEWS VIEW ── */
+.news-container { padding: 12px 16px 24px; max-width: 700px; margin: 0 auto; }
+.news-feed { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+
+.news-card {
+  background: var(--bg2); border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm); overflow: hidden;
+  display: flex; cursor: pointer;
+  transition: transform .18s cubic-bezier(.4,0,.2,1), box-shadow .18s;
+  text-decoration: none; color: inherit;
+  border: 1px solid var(--sep2);
+}
+.news-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.news-card-body { flex: 1; padding: 13px 14px; min-width: 0; }
+.news-card-source { font-size: 10px; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.news-card-title { font-size: 14px; font-weight: 700; color: var(--label); line-height: 1.4; margin-bottom: 5px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.news-card-meta { font-size: 11px; color: var(--label3); font-weight: 500; }
+.news-card-img { width: 88px; flex-shrink: 0; object-fit: cover; background: var(--fill3); }
+
+.news-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 60px 20px; color: var(--label3); }
+.news-loading-icon { font-size: 36px; animation: spin .9s linear infinite; color: var(--blue); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.news-error-card {
+  background: var(--bg2); border-radius: var(--radius-xl);
+  padding: 20px; border: 1px solid var(--sep2);
+  border-left: 4px solid var(--red);
+  box-shadow: var(--shadow-sm);
+}
+.news-error-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.news-error-icon { width: 40px; height: 40px; border-radius: 12px; background: rgba(217,48,37,.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.news-error-icon .mi { font-size: 20px; color: var(--red); }
+.news-error-title { font-size: 15px; font-weight: 700; color: var(--label); }
+.news-error-sub { font-size: 13px; color: var(--label3); line-height: 1.5; margin-bottom: 14px; }
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -1381,6 +1433,12 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
       </button>
       <button class="nav-item" id="nav-history" onclick="showView('history')">
         <span class="mi nav-icon">history</span> <span data-i18n="history"></span>
+      </button>
+      <button class="nav-item" id="nav-cashflow" onclick="showView('cashflow')">
+        <span class="mi nav-icon">show_chart</span> <span id="nav-cashflow-lbl">Cash Flow</span>
+      </button>
+      <button class="nav-item" id="nav-news" onclick="showView('news')">
+        <span class="mi nav-icon">newspaper</span> <span id="nav-news-lbl">Actualités</span>
       </button>
       <button class="nav-item" id="nav-settings" onclick="showView('settings')">
         <span class="mi nav-icon">tune</span> <span data-i18n="settings"></span>
@@ -1738,6 +1796,59 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
         </div>
       </div>
 
+
+      <!-- CASH FLOW -->
+      <div class="view" id="view-cashflow">
+        <div class="cf-container">
+
+          <div class="seg-control">
+            <button class="seg-btn active" data-period="7" onclick="setCFPeriod('7',this)" id="cfTab7">7j</button>
+            <button class="seg-btn" data-period="15" onclick="setCFPeriod('15',this)" id="cfTab15">15j</button>
+            <button class="seg-btn" data-period="30" onclick="setCFPeriod('30',this)" id="cfTab30">30j</button>
+            <button class="seg-btn" data-period="90" onclick="setCFPeriod('90',this)" id="cfTab90">90j</button>
+          </div>
+
+
+
+          <div class="cf-chart-card">
+            <div id="cfChartWrap" style="width:100%;position:relative;min-height:520px">
+              <canvas id="cfCanvas" style="width:100%;display:block"></canvas>
+              <div id="cfTooltip" style="display:none;position:absolute;background:#1a1a2e;color:#f0f0f8;padding:10px 12px;border-radius:10px;font-size:12px;font-weight:600;pointer-events:none;z-index:10;min-width:150px;border:1px solid rgba(255,255,255,.1)"></div>
+            </div>
+          </div>
+
+
+
+
+
+        </div>
+      </div>
+
+
+      <!-- NEWS -->
+      <div class="view" id="view-news">
+        <div class="news-container">
+
+          <!-- Topic chips -->
+          <div class="seg-control" id="newsChips" style="display:flex;width:100%;box-sizing:border-box">
+            <button class="seg-btn active" onclick="setNewsTopic('finance',this)" style="flex:1;padding:7px 4px;text-align:center">Finance</button>
+            <button class="seg-btn" onclick="setNewsTopic('stocks',this)" style="flex:1;padding:7px 4px;text-align:center">Marchés</button>
+            <button class="seg-btn" onclick="setNewsTopic('crypto',this)" style="flex:1;padding:7px 4px;text-align:center">Crypto</button>
+            <button class="seg-btn" onclick="setNewsTopic('economy',this)" style="flex:1;padding:7px 4px;text-align:center">Économie</button>
+            <button class="seg-btn" onclick="setNewsTopic('realestate',this)" style="flex:1;padding:7px 4px;text-align:center">Immo</button>
+          </div>
+
+          <!-- Feed -->
+          <div id="newsFeed" class="news-feed">
+            <div class="news-loading" id="newsLoading">
+              <span class="mi news-loading-icon">sync</span>
+              <span id="newsLoadingTxt">Chargement…</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       <!-- SETTINGS -->
       <div class="view" id="view-settings">
         <div class="settings-container">
@@ -1820,7 +1931,7 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
       </div>
 
     <footer class="app-footer">
-        <div class="footer-version" id="footerVersion">v1.260301.49</div>
+        <div class="footer-version" id="footerVersion">v1.260302.22</div>
         <div class="footer-copy" id="footerCopy">© 2026 Budget 2026</div>
     </footer>
     </div>
@@ -1881,6 +1992,41 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
 
 
 
+
+
+<!-- CF DAY MODAL -->
+<div class="cat-modal-overlay" id="cfDayOverlay" onclick="closeCFDayModal(event)">
+  <div class="cat-modal-sheet">
+    <div class="cat-modal-handle"></div>
+    <div class="cat-modal-header">
+      <div class="cat-modal-icon" id="cfDayModalIcon" style="background:var(--blue-light)">
+        <span class="mi" style="color:var(--blue)">calendar_today</span>
+      </div>
+      <div class="cat-modal-titles">
+        <div class="cat-modal-name" id="cfDayModalTitle">—</div>
+        <div class="cat-modal-meta" id="cfDayModalMeta">—</div>
+      </div>
+      <button class="cat-modal-close" onclick="closeCFDayModal()">
+        <span class="mi">close</span>
+      </button>
+    </div>
+    <div class="cat-modal-summary" id="cfDayModalSummary">
+      <div class="cat-modal-stat">
+        <div class="cat-modal-stat-val" id="cfDayModalIn" style="color:var(--green)">—</div>
+        <div class="cat-modal-stat-lbl" id="cfDayModalInLbl">Entrées</div>
+      </div>
+      <div class="cat-modal-stat">
+        <div class="cat-modal-stat-val" id="cfDayModalOut" style="color:var(--red)">—</div>
+        <div class="cat-modal-stat-lbl" id="cfDayModalOutLbl">Sorties</div>
+      </div>
+      <div class="cat-modal-stat">
+        <div class="cat-modal-stat-val" id="cfDayModalNet">—</div>
+        <div class="cat-modal-stat-lbl" id="cfDayModalNetLbl">Net</div>
+      </div>
+    </div>
+    <div class="cat-modal-list" id="cfDayModalList"></div>
+  </div>
+</div>
 
 <!-- DONUT MODAL -->
 <div class="cat-modal-overlay" id="donutModalOverlay" onclick="closeDonutModal(event)">
@@ -2443,6 +2589,7 @@ function showAuthScreen() {
   document.getElementById('catModalOverlay')?.classList.remove('open');
   document.getElementById('typeModalOverlay')?.classList.remove('open');
   document.getElementById('donutModalOverlay')?.classList.remove('open');
+  document.getElementById('cfDayOverlay')?.classList.remove('open');
   document.getElementById('addCatModal')?.classList.remove('open');
   document.getElementById('addGroupModal')?.classList.remove('open');
   // Show auth screen
@@ -4286,6 +4433,460 @@ function deleteRecur(id) {
 
 
 
+
+
+// ── NEWS VIEW ─────────────────────────────────────────────────────────────────
+let _newsTopic   = 'finance';
+let _newsLoading = false;
+let _newsCache   = {};
+
+// rss2json.com — free tier, no API key needed, handles CORS
+const NEWS_TOPICS = {
+  finance:    'https://finance.yahoo.com/news/rssindex',
+  stocks:     'https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,MSFT,GOOGL,AMZN,TSLA',
+  crypto:     'https://feeds.finance.yahoo.com/rss/2.0/headline?s=BTC-USD,ETH-USD,BNB-USD',
+  economy:    'https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EDJI,%5EIXIC',
+  realestate: 'https://feeds.finance.yahoo.com/rss/2.0/headline?s=VNQ,IYR,RDFN',
+};
+
+async function _fetchRSS(rssUrl) {
+  // rss2json converts any RSS to JSON with no CORS issues
+  const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=25`;
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if(!r.ok) return null;
+    const data = await r.json();
+    if(data.status !== 'ok' || !data.items?.length) return null;
+    return data.items.map(i => ({
+      title:   i.title || '',
+      link:    i.link  || '',
+      source:  i.author || data.feed?.title || 'Yahoo Finance',
+      pubDate: i.pubDate || '',
+      img:     i.thumbnail || i.enclosure?.link || null,
+    }));
+  } catch(e) { return null; }
+}
+
+function setNewsTopic(topic, btn) {
+  _newsTopic = topic;
+  document.querySelectorAll('#newsChips .seg-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  _loadNews();
+}
+
+function _loadNews() {
+  if(_newsLoading) return;
+  const feed = document.getElementById('newsFeed');
+  if(!feed) return;
+
+  const cached = _newsCache[_newsTopic];
+  if(cached && Date.now() - cached.ts < 300000) { _renderNews(cached.items); return; }
+
+  _newsLoading = true;
+  const isFr = LANG === 'fr';
+  feed.innerHTML = `<div class="news-loading">
+    <span class="mi news-loading-icon">sync</span>
+    <span>${isFr ? 'Chargement…' : 'Loading…'}</span>
+  </div>`;
+
+  _fetchRSS(NEWS_TOPICS[_newsTopic]).then(items => {
+    if(!items || !items.length) { _renderNewsError(); return; }
+    _newsCache[_newsTopic] = { items, ts: Date.now() };
+    _renderNews(items);
+  }).catch(() => _renderNewsError())
+    .finally(() => { _newsLoading = false; });
+}
+
+function _timeAgo(dateStr) {
+  const d = new Date(dateStr);
+  if(isNaN(d)) return '';
+  const diff = Math.floor((Date.now() - d) / 60000);
+  if(diff < 1)   return LANG==='fr' ? 'À l\'instant' : 'Just now';
+  if(diff < 60)  return `${diff} min`;
+  if(diff < 1440) return `${Math.floor(diff/60)}h`;
+  return `${Math.floor(diff/1440)}j`;
+}
+
+function _renderNews(items) {
+  const feed = document.getElementById('newsFeed');
+  if(!feed) return;
+  if(!items.length) { _renderNewsError(); return; }
+
+  feed.innerHTML = items.map(item => {
+    const ago  = _timeAgo(item.pubDate);
+    const src  = item.source || 'Yahoo Finance';
+    const imgHtml = item.img
+      ? `<img class="news-card-img" src="${item.img}" alt="" loading="lazy" onerror="this.style.display='none'">`
+      : '';
+    return `<a class="news-card" href="${item.link}" target="_blank" rel="noopener">
+      <div class="news-card-body">
+        <div class="news-card-source">${src}</div>
+        <div class="news-card-title">${item.title}</div>
+        <div class="news-card-meta">${ago}</div>
+      </div>
+      ${imgHtml}
+    </a>`;
+  }).join('');
+}
+
+function _renderNewsError() {
+  const feed = document.getElementById('newsFeed');
+  if(!feed) return;
+  const isFr = LANG === 'fr';
+  feed.innerHTML = `<div class="news-error-card">
+    <div class="news-error-top">
+      <div class="news-error-icon"><span class="mi">wifi_off</span></div>
+      <div class="news-error-title">${isFr ? 'Impossible de charger les actualités' : 'Could not load news'}</div>
+    </div>
+    <div class="news-error-sub">${isFr
+      ? 'Vérifiez votre connexion internet ou réessayez dans quelques instants.'
+      : 'Check your internet connection or try again in a moment.'}</div>
+    <button class="seg-btn active" style="width:100%;justify-content:center" onclick="_newsLoading=false;_loadNews()">
+      <span class="mi mi-sm" style="font-size:16px;vertical-align:middle;margin-right:4px">refresh</span>
+      ${isFr ? 'Réessayer' : 'Retry'}
+    </button>
+  </div>`;
+}
+
+// ── CASH FLOW VIEW ────────────────────────────────────────────────────────────
+let _cfPeriod = '7';
+
+function setCFPeriod(p, btn) {
+  _cfPeriod = p;
+  document.querySelectorAll('#view-cashflow .seg-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderCashFlow();
+}
+
+function renderCashFlow() {
+  // Build date range
+  const now   = new Date();
+  let dateFrom, dateTo;
+
+  const days2 = parseInt(_cfPeriod);
+  dateTo   = new Date(now);
+  dateFrom = new Date(now);
+  dateFrom.setDate(dateFrom.getDate() - days2 + 1);
+
+  const toStr = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const fromStr = toStr(dateFrom);
+  const toStrEnd = toStr(dateTo);
+
+  // Filter transactions in range
+  const filtered = txs.filter(t => t.date >= fromStr && t.date <= toStrEnd);
+
+  // Build day map
+  const dayMap = {};
+  filtered.forEach(t => {
+    if(!dayMap[t.date]) dayMap[t.date] = { income: 0, expense: 0 };
+    if(t.type === 'income')  dayMap[t.date].income  += t.amount;
+    if(t.type === 'expense') dayMap[t.date].expense += t.amount;
+  });
+
+  // Build ordered day array (all days in range)
+  const days = [];
+  const cur = new Date(dateFrom);
+  while(cur <= dateTo) {
+    const k = toStr(cur);
+    days.push({
+      date: k,
+      income:  (dayMap[k]?.income  || 0),
+      expense: (dayMap[k]?.expense || 0),
+      net:     (dayMap[k]?.income  || 0) - (dayMap[k]?.expense || 0),
+      hasTx:   !!dayMap[k],
+    });
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  // KPIs
+  const totalIn  = days.reduce((s,d) => s+d.income,  0);
+  const totalOut = days.reduce((s,d) => s+d.expense, 0);
+  const totalNet = totalIn - totalOut;
+
+
+  // Stats
+
+
+  // i18n labels
+  const isFr = LANG === 'fr';
+
+
+
+  document.getElementById('cfTab7').textContent  = isFr ? '7j'  : '7d';
+  document.getElementById('cfTab15').textContent = isFr ? '15j' : '15d';
+  document.getElementById('cfTab30').textContent = isFr ? '30j' : '30d';
+  document.getElementById('cfTab90').textContent = isFr ? '90j' : '90d';
+
+  // Chart
+  _renderCFChart(days);
+
+
+}
+
+
+
+
+
+
+// ── CASH FLOW CANVAS CHART ────────────────────────────────────────────────────
+function _renderCFChart(days) {
+  const wrap   = document.getElementById('cfChartWrap');
+  const canvas = document.getElementById('cfCanvas');
+  if(!canvas || !wrap) return;
+
+  // Set pixel dimensions
+  const dpr = window.devicePixelRatio || 1;
+  const W   = wrap.clientWidth || 320;
+  const H   = 520;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.style.display = 'block';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const PAD = { t:12, r:12, b:32, l:52 };
+  const cW  = W - PAD.l - PAD.r;
+  const cH  = H - PAD.t - PAD.b;
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const gridC  = isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.07)';
+  const tickC  = isDark ? 'rgba(255,255,255,.35)' : 'rgba(0,0,0,.4)';
+  const zeroC  = isDark ? 'rgba(26,115,232,.35)'  : 'rgba(26,115,232,.4)';
+  const bgC    = isDark ? '#1c1c2e' : '#ffffff';
+
+  // Build cumulative
+  let cum = 0;
+  const pts = days.map(d => { cum += d.net; return { ...d, cum }; });
+
+  const maxBar = Math.max(...pts.map(p => Math.max(p.income, p.expense)), 1);
+  const minCum = Math.min(...pts.map(p => p.cum), 0);
+  const maxCum = Math.max(...pts.map(p => p.cum), 1);
+  const cumRng = (maxCum - minCum) || 1;
+
+  const n    = pts.length || 1;
+  const barW = Math.max(2, Math.min(12, (cW / n) * 0.35));
+
+  const xOf  = i => PAD.l + (i / Math.max(n - 1, 1)) * cW;
+  const yBar = v => PAD.t + cH - (v / maxBar) * cH;
+  const yCum = v => PAD.t + cH - ((v - minCum) / cumRng) * cH;
+
+  // Background
+  ctx.fillStyle = bgC;
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid lines
+  ctx.strokeStyle = gridC;
+  ctx.lineWidth = 1;
+  for(let g = 0; g <= 4; g++) {
+    const gy = PAD.t + (g / 4) * cH;
+    ctx.beginPath(); ctx.moveTo(PAD.l, gy); ctx.lineTo(PAD.l + cW, gy); ctx.stroke();
+    const val = maxBar * (1 - g/4);
+    ctx.fillStyle = tickC;
+    ctx.font = `${9 * dpr / dpr}px 'Google Sans',sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.fillText(Math.round(val).toLocaleString(), PAD.l - 5, gy + 3);
+  }
+
+  // Zero line for cumulative
+  const zy = yCum(0);
+  if(minCum < 0 || true) {
+    ctx.strokeStyle = zeroC;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(PAD.l, zy); ctx.lineTo(PAD.l + cW, zy); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Bars — income (green) and expense (red)
+  pts.forEach((p, i) => {
+    const x = xOf(i);
+    if(p.income > 0) {
+      const y  = yBar(p.income);
+      const bh = PAD.t + cH - y;
+      ctx.fillStyle = 'rgba(30,142,62,.72)';
+      ctx.beginPath();
+      ctx.roundRect(x - barW - 1, y, barW, bh, [2,2,0,0]);
+      ctx.fill();
+    }
+    if(p.expense > 0) {
+      const y  = yBar(p.expense);
+      const bh = PAD.t + cH - y;
+      ctx.fillStyle = 'rgba(217,48,37,.72)';
+      ctx.beginPath();
+      ctx.roundRect(x + 1, y, barW, bh, [2,2,0,0]);
+      ctx.fill();
+    }
+  });
+
+  // Cumulative line — smooth via bezier
+  if(pts.length > 1) {
+    // Gradient fill under line
+    const grad = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + cH);
+    grad.addColorStop(0, 'rgba(26,115,232,.25)');
+    grad.addColorStop(1, 'rgba(26,115,232,.02)');
+
+    ctx.beginPath();
+    ctx.moveTo(xOf(0), yCum(pts[0].cum));
+    for(let i = 1; i < pts.length; i++) {
+      const x0 = xOf(i-1), y0 = yCum(pts[i-1].cum);
+      const x1 = xOf(i),   y1 = yCum(pts[i].cum);
+      const cpx = (x0 + x1) / 2;
+      ctx.bezierCurveTo(cpx, y0, cpx, y1, x1, y1);
+    }
+    // Fill to zero line
+    ctx.lineTo(xOf(pts.length-1), zy);
+    ctx.lineTo(xOf(0), zy);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Draw line
+    ctx.beginPath();
+    ctx.moveTo(xOf(0), yCum(pts[0].cum));
+    for(let i = 1; i < pts.length; i++) {
+      const x0 = xOf(i-1), y0 = yCum(pts[i-1].cum);
+      const x1 = xOf(i),   y1 = yCum(pts[i].cum);
+      const cpx = (x0 + x1) / 2;
+      ctx.bezierCurveTo(cpx, y0, cpx, y1, x1, y1);
+    }
+    ctx.strokeStyle = '#1a73e8';
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin  = 'round';
+    ctx.stroke();
+  }
+
+  // dots removed
+
+  // X labels
+  const labelEvery = n <= 7 ? 1 : n <= 14 ? 2 : n <= 31 ? 5 : 10;
+  ctx.fillStyle  = tickC;
+  ctx.font       = `9px 'Google Sans',sans-serif`;
+  ctx.textAlign  = 'center';
+  pts.forEach((p, i) => {
+    if(i % labelEvery !== 0 && i !== n-1) return;
+    const parts = p.date.split('-');
+    const lbl   = LANG==='fr' ? `${parts[2]}/${parts[1]}` : `${parts[1]}/${parts[2]}`;
+    ctx.fillText(lbl, xOf(i), H - 8);
+  });
+
+  // Store for hover
+  window._cfPts  = pts;
+  window._cfDays = days;
+  // Set up resize observer once
+  if(!window._cfResizeObs) {
+    window._cfResizeObs = new ResizeObserver(() => {
+      if(window._cfDays) _renderCFChart(window._cfDays);
+    });
+    window._cfResizeObs.observe(wrap);
+  }
+  window._cfMeta = { xOf, yCum, PAD, W, H, n, dpr };
+
+  // Hover handler
+  canvas.onclick = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const cx   = e.clientX - rect.left;
+    if(!window._cfPts || !window._cfMeta) return;
+    const { xOf, n } = window._cfMeta;
+    let closest = 0, minDist = Infinity;
+    window._cfPts.forEach((p, i) => {
+      const d = Math.abs(xOf(i) - cx);
+      if(d < minDist) { minDist = d; closest = i; }
+    });
+    openCFDay(window._cfPts[closest].date);
+  };
+  canvas.onmousemove = canvas.ontouchmove = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const cx   = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    if(!window._cfPts || !window._cfMeta) return;
+    const { xOf, n } = window._cfMeta;
+    let closest = 0, minDist = Infinity;
+    window._cfPts.forEach((p, i) => {
+      const d = Math.abs(xOf(i) - cx);
+      if(d < minDist) { minDist = d; closest = i; }
+    });
+    _showCFTip(e, closest, rect);
+  };
+  canvas.style.cursor = 'pointer';
+  canvas.onmouseleave = canvas.ontouchend = () => {
+    const tip = document.getElementById('cfTooltip');
+    if(tip) tip.style.display = 'none';
+  };
+}
+
+function _showCFTip(e, idx, rect) {
+  const p   = window._cfPts?.[idx];
+  const tip = document.getElementById('cfTooltip');
+  if(!p || !tip) return;
+  const isFr = LANG === 'fr';
+  const netSign = p.cum >= 0 ? '+' : '';
+  tip.innerHTML = `
+    <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.45);margin-bottom:6px;text-transform:uppercase">${fmtDate(p.date)}</div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span style="width:7px;height:7px;border-radius:50%;background:#1e8e3e;flex-shrink:0"></span>${isFr?'Entrées':'Income'}: <b>${fmt(p.income)}</b></div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span style="width:7px;height:7px;border-radius:50%;background:#d93025;flex-shrink:0"></span>${isFr?'Sorties':'Expenses'}: <b>${fmt(p.expense)}</b></div>
+    <div style="display:flex;align-items:center;gap:6px;border-top:1px solid rgba(255,255,255,.12);padding-top:5px;margin-top:3px"><span style="width:7px;height:7px;border-radius:50%;background:#1a73e8;flex-shrink:0"></span>${isFr?'Net cumulé':'Cumul. net'}: <b style="color:${p.cum>=0?'#4fc87a':'#ef5350'}">${netSign}${fmt(p.cum)}</b></div>`;
+  tip.style.display = 'block';
+  const cx = e.touches ? e.touches[0].clientX : e.clientX;
+  const left = cx - rect.left + 14;
+  tip.style.left = Math.min(left, rect.width - 165) + 'px';
+  tip.style.top  = '8px';
+}
+
+function openCFDay(dateStr) {
+  const dayTxs = txs.filter(t => t.date === dateStr);
+  if(!dayTxs.length) return;
+  const isFr = LANG === 'fr';
+
+  const income  = dayTxs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expense = dayTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const net     = income - expense;
+
+  // Header
+  document.getElementById('cfDayModalTitle').textContent = fmtDate(dateStr);
+  document.getElementById('cfDayModalMeta').textContent  =
+    `${dayTxs.length} transaction${dayTxs.length>1?'s':''}`;
+
+  // Summary
+  document.getElementById('cfDayModalIn').textContent  = income  > 0 ? '+' + fmt(income)  : '—';
+  document.getElementById('cfDayModalOut').textContent = expense > 0 ? '-' + fmt(expense) : '—';
+  const netEl = document.getElementById('cfDayModalNet');
+  netEl.textContent   = (net >= 0 ? '+' : '') + fmt(net);
+  netEl.style.color   = net >= 0 ? 'var(--green)' : 'var(--red)';
+
+  // i18n labels
+  document.getElementById('cfDayModalInLbl').textContent  = isFr ? 'Entrées'  : 'Income';
+  document.getElementById('cfDayModalOutLbl').textContent = isFr ? 'Sorties'  : 'Expenses';
+  document.getElementById('cfDayModalNetLbl').textContent = 'Net';
+
+  // Transaction list
+  const list = document.getElementById('cfDayModalList');
+  const sorted = [...dayTxs].sort((a,b) => (a.type==='income'?0:1) - (b.type==='income'?0:1));
+  list.innerHTML = sorted.map(tx => {
+    const cat  = getCat(tx.cat);
+    const sign = tx.type === 'income' ? '+' : '-';
+    const amtColor = tx.type === 'income' ? 'var(--green)' : 'var(--red)';
+    return `<div class="cat-modal-tx" onclick="closeCFDayModal();openEditTx('${tx.id}')">
+      <div class="cat-modal-tx-icon" style="background:${cat.color}22">
+        <span class="mi" style="color:${cat.color};font-size:18px">${cat.icon||'label'}</span>
+      </div>
+      <div class="cat-modal-tx-body">
+        <div class="cat-modal-tx-desc">${tx.desc || cat.name}</div>
+        <div class="cat-modal-tx-date">${cat.name}</div>
+      </div>
+      <div class="cat-modal-tx-amt" style="color:${amtColor}">${sign}${fmt(tx.amount)}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('cfDayOverlay').classList.add('open');
+}
+
+function closeCFDayModal(e) {
+  if(e && e.target !== document.getElementById('cfDayOverlay')) return;
+  document.getElementById('cfDayOverlay').classList.remove('open');
+}
+
 // ── HISTORY SEARCH ────────────────────────────────────────────────────────────
 let _histSearch = '';
 let _searchDebounce = null;
@@ -4805,7 +5406,7 @@ function applyI18n() {
   const fv = document.getElementById('footerVersion');
   const fc = document.getElementById('footerCopy');
   const d  = LANG==='fr' ? '01 Mar 2026' : 'Mar 01, 2026';
-  if(fv) fv.textContent = 'v1.260301.49 · ' + t.updatedOn + ' ' + d;
+  if(fv) fv.textContent = 'v1.260302.22 · ' + t.updatedOn + ' ' + d;
   if(fc) fc.textContent = '© 2026 Budget 2026 · ' + t.allRights;
   // Set topbar title to current view
   const ttEl = document.getElementById('topbarTitle');
@@ -4907,7 +5508,7 @@ function setLang(lang) {
   }
 }
 
-const titles = { overview:t.overview, add:t.add, history:t.history, settings:t.settings };
+const titles = { overview:t.overview, add:t.add, history:t.history, settings:t.settings, cashflow:'Cash Flow', recurring:LANG==='fr'?'Récurrences':'Recurring', news:LANG==='fr'?'Actualités':'News' };
 let _topbarExpanded = false;
 
 function toggleTopbarIcons(forceClose) {
@@ -4947,8 +5548,21 @@ function showView(id){
   const expIcon = document.getElementById('topbarExpandIcon');
   if(expIcon) expIcon.textContent = 'more_horiz';
 
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.getElementById('view-'+id).classList.add('active');
+  // Fade out current, then switch
+  const _prev = document.querySelector('.view.active');
+  if(_prev && _prev.id !== 'view-'+id) {
+    _prev.style.transition = 'opacity .1s';
+    _prev.style.opacity = '0';
+    setTimeout(() => {
+      _prev.style.transition = '';
+      _prev.style.opacity = '';
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      document.getElementById('view-'+id).classList.add('active');
+    }, 90);
+  } else {
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+id).classList.add('active');
+  }
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   const nb=document.getElementById('nav-'+id); if(nb) nb.classList.add('active');
 
@@ -4968,6 +5582,8 @@ function showView(id){
     if(_histTab === 'chart') renderTrendChart();
   }
   if(id !== 'history' && _histSearch) clearHistSearch();
+  if(id === 'cashflow') renderCashFlow();
+  if(id === 'news') _loadNews();
   if(id==='settings')   renderSettingsView();
   if(id==='recurring')  renderRecurringView();
 }
@@ -5007,7 +5623,7 @@ function goToday(){
 
 function getSystemTheme(){ return window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'; }
 function applyTheme(theme){ document.documentElement.setAttribute('data-theme',theme); const ti=document.getElementById('themeIcon'); if(ti) ti.textContent=theme==='dark'?'light_mode':'dark_mode'; }
-function toggleTheme(){ const cur=document.documentElement.getAttribute('data-theme')||getSystemTheme(); const next=cur==='dark'?'light':'dark'; applyTheme(next); try{localStorage.setItem('budget26_theme',next);}catch(e){} applyI18n(); }
+function toggleTheme(){ const cur=document.documentElement.getAttribute('data-theme')||getSystemTheme(); const next=cur==='dark'?'light':'dark'; applyTheme(next); try{localStorage.setItem('budget26_theme',next);}catch(e){} applyI18n(); if(window._cfDays) _renderCFChart(window._cfDays); }
 function initTheme(){ let s=null; try{s=localStorage.getItem('budget26_theme');}catch(e){} applyTheme(s||getSystemTheme()); }
 
 function pickType(t){
