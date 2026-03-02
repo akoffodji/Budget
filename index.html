@@ -1833,7 +1833,7 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <div style="font-size:11px;color:var(--label3);display:flex;align-items:center;gap:4px">
               <span class="mi" style="font-size:14px;color:var(--green)">verified</span>
-              <span>Actualités en temps réel</span>
+              <span>Actualités réelles via recherche web</span>
             </div>
             <button onclick="_newsCache={};_newsLoading=false;_loadNews()" style="background:none;border:none;cursor:pointer;color:var(--blue);font-size:12px;font-weight:600;font-family:inherit;display:flex;align-items:center;gap:3px;padding:4px 6px;border-radius:6px;transition:background .15s" onmouseover="this.style.background='var(--blue-light)'" onmouseout="this.style.background='none'">
               <span class="mi" style="font-size:14px">refresh</span> Actualiser
@@ -4444,41 +4444,59 @@ function deleteRecur(id) {
 
 
 
-// ── NEWS VIEW — powered by NewsAPI.org ────────────────────────────────────────
+// ── NEWS VIEW — Claude AI + Web Search ────────────────────────────────────────
 let _newsTopic   = 'finance';
 let _newsLoading = false;
 let _newsCache   = {};
 
-const NEWSAPI_KEY = '396dd7a063f542aca93c2a4491277167';
-
 const NEWS_TOPIC_QUERIES = {
-  finance:    'finance bourse investissement',
-  stocks:     'actions bourse CAC40 marchés',
-  crypto:     'bitcoin ethereum cryptomonnaie crypto',
-  economy:    'économie inflation BCE Fed croissance',
-  realestate: 'immobilier logement prix maison',
+  finance:    'actualités finance bourse investissement aujourd\'hui',
+  stocks:     'actualités actions bourse CAC40 marchés aujourd\'hui',
+  crypto:     'actualités bitcoin ethereum cryptomonnaie aujourd\'hui',
+  economy:    'actualités économie inflation BCE croissance aujourd\'hui',
+  realestate: 'actualités immobilier logement prix marché aujourd\'hui',
 };
 
-async function _fetchNewsFromAPI(topic) {
-  const q = encodeURIComponent(NEWS_TOPIC_QUERIES[topic] || NEWS_TOPIC_QUERIES.finance);
-  const url = `https://newsapi.org/v2/everything?q=${q}&language=fr&sortBy=publishedAt&pageSize=20&apiKey=${NEWSAPI_KEY}`;
+async function _fetchNewsFromClaude(topic) {
+  const query = NEWS_TOPIC_QUERIES[topic] || NEWS_TOPIC_QUERIES.finance;
+  const today = new Date().toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10000);
-  let r;
-  try { r = await fetch(url, { signal: controller.signal }); } finally { clearTimeout(timer); }
-  if(!r.ok) throw new Error(`NewsAPI error ${r.status}`);
-  const data = await r.json();
-  if(data.status !== 'ok') throw new Error(data.message || 'NewsAPI error');
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+      messages: [{
+        role: 'user',
+        content: `Recherche les dernières actualités sur : "${query}" (date: ${today}).
+Puis réponds UNIQUEMENT avec un JSON valide (tableau de 8-10 articles), sans texte avant ni après, sans backticks :
+[{"title":"...","source":"...","summary":"...","url":"...","publishedAt":"2025-03-01T10:00:00Z"}]
+- title : titre exact de l'article trouvé
+- source : nom du média
+- summary : résumé en 1-2 phrases
+- url : lien direct vers l'article
+- publishedAt : date ISO de publication
+Tout en français.`
+      }]
+    })
+  });
 
-  return (data.articles || []).filter(a => a.title && a.title !== '[Removed]').map(a => ({
-    title:      a.title,
-    summary:    a.description || '',
-    source:     a.source?.name || '',
-    url:        a.url,
-    img:        a.urlToImage || null,
-    publishedAt: a.publishedAt,
-  }));
+  if(!response.ok) throw new Error(`API ${response.status}`);
+  const data = await response.json();
+
+  // Extract text from response (may contain tool_use blocks)
+  const text = (data.content || [])
+    .filter(b => b.type === 'text')
+    .map(b => b.text)
+    .join('');
+
+  const clean = text.replace(/```json|```/g, '').trim();
+  const start = clean.indexOf('[');
+  const end   = clean.lastIndexOf(']');
+  if(start === -1 || end === -1) throw new Error('No JSON array found');
+  return JSON.parse(clean.slice(start, end + 1));
 }
 
 function setNewsTopic(topic, btn) {
@@ -4502,7 +4520,7 @@ function _loadNews() {
     <span>Chargement des actualités…</span>
   </div>`;
 
-  _fetchNewsFromAPI(_newsTopic).then(items => {
+  _fetchNewsFromClaude(_newsTopic).then(items => {
     if(!items || !items.length) { _renderNewsError(); return; }
     _newsCache[_newsTopic] = { items, ts: Date.now() };
     _renderNews(items);
