@@ -1830,6 +1830,15 @@ body.demo-mode .auth-screen { padding-top: calc(32px + env(safe-area-inset-top))
         <div class="news-container">
 
           <!-- Topic chips -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:11px;color:var(--label3);display:flex;align-items:center;gap:4px">
+              <span class="mi" style="font-size:14px;color:var(--green)">verified</span>
+              <span>Actualités en temps réel</span>
+            </div>
+            <button onclick="_newsCache={};_newsLoading=false;_loadNews()" style="background:none;border:none;cursor:pointer;color:var(--blue);font-size:12px;font-weight:600;font-family:inherit;display:flex;align-items:center;gap:3px;padding:4px 6px;border-radius:6px;transition:background .15s" onmouseover="this.style.background='var(--blue-light)'" onmouseout="this.style.background='none'">
+              <span class="mi" style="font-size:14px">refresh</span> Actualiser
+            </button>
+          </div>
           <div class="seg-control" id="newsChips" style="display:flex;width:100%;box-sizing:border-box">
             <button class="seg-btn active" onclick="setNewsTopic('finance',this)" style="flex:1;padding:7px 4px;text-align:center">Finance</button>
             <button class="seg-btn" onclick="setNewsTopic('stocks',this)" style="flex:1;padding:7px 4px;text-align:center">Marchés</button>
@@ -4435,108 +4444,41 @@ function deleteRecur(id) {
 
 
 
-// ── NEWS VIEW ─────────────────────────────────────────────────────────────────
+// ── NEWS VIEW — powered by NewsAPI.org ────────────────────────────────────────
 let _newsTopic   = 'finance';
 let _newsLoading = false;
 let _newsCache   = {};
 
-// Multiple RSS sources per topic for reliability
-const NEWS_TOPICS = {
-  finance: [
-    'https://feeds.bbci.co.uk/news/business/rss.xml',
-    'https://www.ft.com/rss/home/french',
-    'https://rss.lemonde.fr/c3s/rss/sequence/0/0/82.xml',
-  ],
-  stocks: [
-    'https://feeds.bbci.co.uk/news/business/rss.xml',
-    'https://www.investing.com/rss/news_14.rss',
-    'https://feeds.reuters.com/reuters/businessNews',
-  ],
-  crypto: [
-    'https://coinjournal.net/fr/feed/',
-    'https://cointelegraph.com/rss',
-    'https://coindesk.com/arc/outboundfeeds/rss/',
-  ],
-  economy: [
-    'https://feeds.bbci.co.uk/news/business/rss.xml',
-    'https://feeds.reuters.com/reuters/businessNews',
-    'https://www.lesechos.fr/rss/rss_la_une.xml',
-  ],
-  realestate: [
-    'https://feeds.bbci.co.uk/news/business/rss.xml',
-    'https://www.seloger.com/actualites/feed/',
-    'https://www.challenges.fr/immobilier/feed/',
-  ],
+const NEWSAPI_KEY = '396dd7a063f542aca93c2a4491277167';
+
+const NEWS_TOPIC_QUERIES = {
+  finance:    'finance bourse investissement',
+  stocks:     'actions bourse CAC40 marchés',
+  crypto:     'bitcoin ethereum cryptomonnaie crypto',
+  economy:    'économie inflation BCE Fed croissance',
+  realestate: 'immobilier logement prix maison',
 };
 
-// CORS proxy list — tried in order until one works
-const CORS_PROXIES = [
-  url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-];
+async function _fetchNewsFromAPI(topic) {
+  const q = encodeURIComponent(NEWS_TOPIC_QUERIES[topic] || NEWS_TOPIC_QUERIES.finance);
+  const url = `https://newsapi.org/v2/everything?q=${q}&language=fr&sortBy=publishedAt&pageSize=20&apiKey=${NEWSAPI_KEY}`;
 
-async function _fetchRSSWithProxy(rssUrl) {
-  for(const makeProxyUrl of CORS_PROXIES) {
-    try {
-      const proxyUrl = makeProxyUrl(rssUrl);
-      const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
-      if(!r.ok) continue;
-      const data = await r.json();
-      // allorigins returns { contents: "..." }
-      const xmlText = data.contents || data.body || (typeof data === 'string' ? data : null);
-      if(!xmlText) continue;
-      const items = _parseRSSXML(xmlText, rssUrl);
-      if(items && items.length) return items;
-    } catch(e) { continue; }
-  }
-  return null;
-}
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  let r;
+  try { r = await fetch(url, { signal: controller.signal }); } finally { clearTimeout(timer); }
+  if(!r.ok) throw new Error(`NewsAPI error ${r.status}`);
+  const data = await r.json();
+  if(data.status !== 'ok') throw new Error(data.message || 'NewsAPI error');
 
-function _parseRSSXML(xmlText, sourceUrl) {
-  try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(xmlText, 'text/xml');
-    const items = Array.from(doc.querySelectorAll('item, entry'));
-    if(!items.length) return null;
-
-    // Guess source name from feed title or domain
-    const feedTitle = doc.querySelector('channel > title, feed > title')?.textContent?.trim()
-      || new URL(sourceUrl).hostname.replace('www.','').replace('feeds.','');
-
-    return items.slice(0, 20).map(item => {
-      const title   = item.querySelector('title')?.textContent?.trim() || '';
-      const link    = item.querySelector('link')?.textContent?.trim()
-                   || item.querySelector('link')?.getAttribute('href') || '';
-      const pubDate = item.querySelector('pubDate, published, updated')?.textContent?.trim() || '';
-      const source  = item.querySelector('source')?.textContent?.trim() || feedTitle;
-
-      // Try to find an image
-      let img = null;
-      const enclosure = item.querySelector('enclosure[type^="image"]');
-      if(enclosure) img = enclosure.getAttribute('url');
-      if(!img) {
-        const media = item.querySelector('thumbnail, content[medium="image"]');
-        if(media) img = media.getAttribute('url');
-      }
-      if(!img) {
-        const desc = item.querySelector('description, summary')?.textContent || '';
-        const m = desc.match(/<img[^>]+src=["']([^"']+)["']/i);
-        if(m) img = m[1];
-      }
-
-      return { title, link, source, pubDate, img };
-    }).filter(i => i.title && i.link);
-  } catch(e) { return null; }
-}
-
-async function _fetchRSS(topic) {
-  const urls = NEWS_TOPICS[topic] || NEWS_TOPICS.finance;
-  for(const url of urls) {
-    const items = await _fetchRSSWithProxy(url);
-    if(items && items.length) return items;
-  }
-  return null;
+  return (data.articles || []).filter(a => a.title && a.title !== '[Removed]').map(a => ({
+    title:      a.title,
+    summary:    a.description || '',
+    source:     a.source?.name || '',
+    url:        a.url,
+    img:        a.urlToImage || null,
+    publishedAt: a.publishedAt,
+  }));
 }
 
 function setNewsTopic(topic, btn) {
@@ -4555,46 +4497,62 @@ function _loadNews() {
   if(cached && Date.now() - cached.ts < 300000) { _renderNews(cached.items); return; }
 
   _newsLoading = true;
-  const isFr = LANG === 'fr';
   feed.innerHTML = `<div class="news-loading">
     <span class="mi news-loading-icon">sync</span>
-    <span>${isFr ? 'Chargement…' : 'Loading…'}</span>
+    <span>Chargement des actualités…</span>
   </div>`;
 
-  _fetchRSS(_newsTopic).then(items => {
+  _fetchNewsFromAPI(_newsTopic).then(items => {
     if(!items || !items.length) { _renderNewsError(); return; }
     _newsCache[_newsTopic] = { items, ts: Date.now() };
     _renderNews(items);
-  }).catch(() => _renderNewsError())
+  }).catch(e => { console.warn('News error:', e); _renderNewsError(); })
     .finally(() => { _newsLoading = false; });
 }
 
-function _timeAgo(dateStr) {
+function _timeAgoFromDate(dateStr) {
   const d = new Date(dateStr);
   if(isNaN(d)) return '';
   const diff = Math.floor((Date.now() - d) / 60000);
-  if(diff < 1)   return LANG==='fr' ? 'À l\'instant' : 'Just now';
-  if(diff < 60)  return `${diff} min`;
-  if(diff < 1440) return `${Math.floor(diff/60)}h`;
-  return `${Math.floor(diff/1440)}j`;
+  if(diff < 1)   return 'À l\'instant';
+  if(diff < 60)  return `il y a ${diff} min`;
+  if(diff < 1440) return `il y a ${Math.floor(diff/60)}h`;
+  return `il y a ${Math.floor(diff/1440)}j`;
 }
+
+const NEWS_ICONS = {
+  finance:    'trending_up',
+  stocks:     'show_chart',
+  crypto:     'currency_bitcoin',
+  economy:    'public',
+  realestate: 'home',
+};
 
 function _renderNews(items) {
   const feed = document.getElementById('newsFeed');
   if(!feed) return;
   if(!items.length) { _renderNewsError(); return; }
 
+  const icon = NEWS_ICONS[_newsTopic] || 'article';
+
   feed.innerHTML = items.map(item => {
-    const ago  = _timeAgo(item.pubDate);
-    const src  = item.source || 'Yahoo Finance';
-    const imgHtml = item.img
-      ? `<img class="news-card-img" src="${item.img}" alt="" loading="lazy" onerror="this.style.display='none'">`
+    const ago = _timeAgoFromDate(item.publishedAt);
+    const src = item.source || '';
+    const summary = item.summary
+      ? `<div style="margin-top:4px;font-size:12px;color:var(--label2);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${item.summary}</div>`
       : '';
-    return `<a class="news-card" href="${item.link}" target="_blank" rel="noopener">
+    const imgHtml = item.img
+      ? `<img class="news-card-img" src="${item.img}" alt="" loading="lazy" onerror="this.style.display='none'" style="width:80px;object-fit:cover;border-radius:0 10px 10px 0">`
+      : `<div style="width:48px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--blue-light);border-radius:10px;margin:14px 0 14px 0">
+           <span class="mi" style="color:var(--blue);font-size:22px">${icon}</span>
+         </div>`;
+
+    return `<a class="news-card" href="${item.url}" target="_blank" rel="noopener" style="text-decoration:none">
       <div class="news-card-body">
         <div class="news-card-source">${src}</div>
         <div class="news-card-title">${item.title}</div>
-        <div class="news-card-meta">${ago}</div>
+        ${summary}
+        <div class="news-card-meta" style="margin-top:5px">${ago}</div>
       </div>
       ${imgHtml}
     </a>`;
@@ -6275,7 +6233,7 @@ document.getElementById('manifestLink').href = manifestURL;
 // ── SERVICE WORKER ────────────────────────────────────────────────────────────
 if('serviceWorker' in navigator) {
   const swCode = `
-    const CACHE = 'budget2026-v1';
+    const CACHE = 'budget2026-v2';
     const URLS = [
       'https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Display:wght@400;500;700&display=swap',
       'https://fonts.googleapis.com/icon?family=Material+Icons+Round'
@@ -6289,6 +6247,9 @@ if('serviceWorker' in navigator) {
       self.clients.claim();
     });
     self.addEventListener('fetch', e => {
+      const url = e.request.url;
+      // Bypass external API calls — these cannot be cloned by the SW
+      if(url.includes('newsapi.org') || url.includes('anthropic.com') || url.includes('supabase')) return;
       e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(()=>new Response('', {status:408}))));
     });
   `;
